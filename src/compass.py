@@ -16,11 +16,5 @@ class Compass:
     fusion_frequency = 100  # Hz
     bno.enable_feature(BNO_REPORT_GAME_ROTATION_VECTOR, fusion_frequency)
 
-    @staticmethod
-    def get_heading():
+    def heading():
         return Compass.bno.euler_heading
-
-
-def get_heading():
-    # Backwards-compatible function using the static class
-    return Compass.get_heading()

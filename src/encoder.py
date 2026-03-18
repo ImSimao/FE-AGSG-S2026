@@ -6,7 +6,7 @@ import math
 class Encoder:
     # ===== CONFIGURAÇÃO =====
     PPR = 200               # pulsos por volta do encoder
-    RELACAO = 5 / 3         # relação engrenagens
+    RELACAO = 3 / 5         # relação engrenagens
     DIAMETRO_RODA = 3.2     # centimetros
 
     # Estado
@@ -27,6 +27,10 @@ class Encoder:
     def setup_irq():
         # Interrupção na borda de subida do canal A
         Encoder.encoder_a.irq(trigger=Pin.IRQ_RISING, handler=Encoder.encoder_irq)
+
+    @staticmethod
+    def distance_cm():
+        return Encoder.contador / (Encoder.PPR / Encoder.RELACAO) * (Encoder.DIAMETRO_RODA * math.pi)
 
 # Configura interrupção e inicia o loop principal
 Encoder.setup_irq()

@@ -13,14 +13,15 @@ class Servo:
 
     @staticmethod
     def set_angle(angle: int) -> None:
-        angle = max(
-            Servo._CENTER_STEERING - Servo._MAX_STEERING_OFFSET,
-            min(
-                Servo._CENTER_STEERING + Servo._MAX_STEERING_OFFSET,
-                Servo._CENTER_STEERING + angle,
-            ),
-        )
+        
+        if angle > Servo._MAX_STEERING_OFFSET:
+            angle = Servo._MAX_STEERING_OFFSET
+        elif angle < -Servo._MAX_STEERING_OFFSET:
+            angle = -Servo._MAX_STEERING_OFFSET
 
+        angle = Servo._CENTER_STEERING + angle
+
+        
         duty = int(
             Servo._MIN_DUTY
             + (angle / 180) * (Servo._MAX_DUTY - Servo._MIN_DUTY)
