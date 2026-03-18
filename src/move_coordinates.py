@@ -30,10 +30,6 @@ def get_angle_to_rotate(dest_x, dest_y):
     if angle_to_rotate > 180:
         angle_to_rotate -= 360
 
-    print("angle_to_rotate: ", angle_to_rotate)
-    print("compass_angle: ", compass_angle)
-    print("angle_to_coord: ", angle_to_coord)
-
     return angle_to_rotate
 
 def rotate_coordinates(dest_x, dest_y):
@@ -45,7 +41,8 @@ def rotate_coordinates(dest_x, dest_y):
             Motor.parar()
             break
 
-        Motor.frente(0.35)
+        state.target_speed = 30
+        Motor.frente()
 
         if angle_to_rotate > 0:
             Servo.set_angle(60)
@@ -101,8 +98,9 @@ def move_coordinates(dest_x, dest_y):
             pid_y.reset()
             Servo.set_angle(0)
             break
-        
-        Motor.frente(0.7)
+
+        state.target_speed = 50
+        Motor.frente()
 
         servo_angle = pid_y.compute(-y_prime, dt) 
         Servo.set_angle(servo_angle)

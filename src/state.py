@@ -8,6 +8,8 @@ class State:
         self.odom_y = 0.0
         self.initial_compass_angle = 0.0
         self.compass_angle = 0.0
+        self.current_speed = 0.0
+        self.target_speed = 0.0
 
     @property
     def relative_lane(self):
