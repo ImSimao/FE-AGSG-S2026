@@ -1,9 +1,5 @@
 import time
-from compass import Compass
-import motor
 from state import state
-from distance import Distance
-from motor import Motor
 from servo import Servo
 import math
 from pid import PIDController
@@ -38,11 +34,10 @@ def rotate_coordinates(dest_x, dest_y):
 
         if abs(angle_to_rotate) < 1.5:
             Servo.set_angle(0)
-            Motor.parar()
+            state.target_speed = 0
             break
 
         state.target_speed = 30
-        Motor.frente()
 
         if angle_to_rotate > 0:
             Servo.set_angle(60)
@@ -94,13 +89,12 @@ def move_coordinates(dest_x, dest_y):
 
         
         if L - x_prime < 0:
-            Motor.parar()
+            state.target_speed = 0
             pid_y.reset()
             Servo.set_angle(0)
             break
 
         state.target_speed = 50
-        Motor.frente()
 
         servo_angle = pid_y.compute(-y_prime, dt) 
         Servo.set_angle(servo_angle)

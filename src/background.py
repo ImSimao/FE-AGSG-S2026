@@ -14,34 +14,69 @@ SPEED_INTERVAL_MS = 1/10 * 1000    # 20 Hz
 LOOP_SLEEP_MS = 1
 
 
-class SpeedController:
-    def __init__(self):
-        # Output is normalized to PWM duty (0.0 to 1.0).
-        self.pid = PIDController(
-            kp=0.01,
-            ki=0.005,
-            kd=0.025,
-            output_min=0.0,
-            output_max=1.0,
-            integral_limit=20.0,
-        )
+class CruiseControl:
+    def __init__(self, max_pwm=1, min_pwm=-1,
+                 max_accel=1/2, max_decel=1/2):
+        """
+        max_pwm: maximum PWM value
+        min_pwm: minimum PWM value
+        max_accel: maximum increase in PWM per second
+        max_decel: maximum decrease in PWM per second
+        """
+        self.max_pwm = max_pwm
+        self.min_pwm = min_pwm
+        self.max_accel = max_accel
+        self.max_decel = max_decel
 
-    def update(self, target_speed, current_speed, dt_s):
-        if target_speed <= 0:
-            self.pid.reset()
-            return 0.0
+        self.current_pwm = 0.0    # current PWM output
 
-        error = target_speed - current_speed
-        duty = self.pid.compute(error, dt_s)
-        duty = duty + (0.0127 * current_speed)
-        if duty < 0.0:
-            duty = 0.0
-        elif duty > 1.0:
-            duty = 1.0
-        return duty
+        # Simple proportional gain (tune as needed)
+        self.kp = 1/70
 
+    def update(self, dt):
+        """
+        Update control loop.
 
-speed_controller = SpeedController()
+        dt: time step (seconds)
+
+        Returns: new PWM value
+        """
+
+        # Proportional control to compute desired PWM
+        error = state.target_speed - state.current_speed
+        desired_pwm = self.current_pwm + self.kp * error
+
+        # Clamp desired PWM to valid range
+        desired_pwm = max(self.min_pwm, min(self.max_pwm, desired_pwm))
+
+        # Apply acceleration/deceleration limits
+        delta_pwm = desired_pwm - self.current_pwm
+
+        if delta_pwm > 0:
+            # Accelerating
+            max_delta = self.max_accel * dt
+            delta_pwm = min(delta_pwm, max_delta)
+        else:
+            # Decelerating
+            max_delta = self.max_decel * dt
+            delta_pwm = max(delta_pwm, -max_delta)
+
+        # Update PWM
+        self.current_pwm += delta_pwm
+
+        # Final clamp (safety)
+        self.current_pwm = max(self.min_pwm, min(self.max_pwm, self.current_pwm))
+
+        if self.current_pwm > 0:
+            Motor.frente()
+        elif self.current_pwm == 0:
+            Motor.parar()
+        else:
+            Motor.tras()
+
+        Motor.ena.duty_u16(int(abs(self.current_pwm) * 65535))
+
+cruiseControl = CruiseControl()
 
 def _read_distance_sensors():
     Distance.get_sensor_data()
@@ -71,13 +106,7 @@ def update_speed(last_distance_cm, last_speed_ms):
 
     state.current_speed = delta_cm / delta_time_s
 
-
-
-    target_speed = state.target_speed
-    current_speed = state.current_speed
-
-    duty = speed_controller.update(target_speed, current_speed, delta_time_s)
-    Motor.ena.duty_u16(int(duty * 65535))
+    cruiseControl.update(delta_time_s)
 
     return current_distance_cm
 
