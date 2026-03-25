@@ -4,19 +4,20 @@ import math
 from compass import Compass
 from encoder import Encoder
 from motor import Motor
-from pid import PIDController
 from state import state
+from telemetry import Telemetry
 
 
-SENSOR_INTERVAL_MS = 1/50 * 1000  # 50 Hz
-ODOM_INTERVAL_MS = 1/100 * 1000    # 100 Hz
-SPEED_INTERVAL_MS = 1/10 * 1000    # 20 Hz
+SENSOR_INTERVAL_MS    = 1/20  * 1000  # 50 Hz
+ODOM_INTERVAL_MS      = 1/100 * 1000  # 100 Hz
+SPEED_INTERVAL_MS     = 1/10  * 1000  # 10 Hz
+TELEMETRY_INTERVAL_MS = 1/10  * 1000  # 10 Hz
 LOOP_SLEEP_MS = 1
 
 
 class CruiseControl:
     def __init__(self, max_pwm=1, min_pwm=-1,
-                 max_accel=1/2, max_decel=1/2):
+                 max_accel=1/2, max_decel=1):
         """
         max_pwm: maximum PWM value
         min_pwm: minimum PWM value
@@ -76,6 +77,7 @@ class CruiseControl:
 
         Motor.ena.duty_u16(int(abs(self.current_pwm) * 65535))
 
+
 cruiseControl = CruiseControl()
 
 def _read_distance_sensors():
@@ -110,12 +112,18 @@ def update_speed(last_distance_cm, last_speed_ms):
 
     return current_distance_cm
 
+def _send_telemetry():
+    """Transmit current pose and distance sensor readings."""
+    Telemetry.send()
+
+
 def background_task():
     last_distance_cm = Encoder.distance_cm()
     last_speed_cm = last_distance_cm
     last_sensor_ms = time.ticks_ms()
     last_odom_ms = last_sensor_ms
     last_speed_ms = last_sensor_ms
+    last_telemetry_ms = last_sensor_ms
 
     print("Background task started")
 
@@ -125,17 +133,20 @@ def background_task():
             _read_distance_sensors()
             last_sensor_ms = now_ms
 
-
         now_ms = time.ticks_ms()
         if time.ticks_diff(now_ms, last_odom_ms) >= ODOM_INTERVAL_MS:
             last_distance_cm = _update_odometry(last_distance_cm)
             last_odom_ms = now_ms
 
-
         now_ms = time.ticks_ms()
         if time.ticks_diff(now_ms, last_speed_ms) >= SPEED_INTERVAL_MS:
             last_speed_cm = update_speed(last_speed_cm, last_speed_ms)
             last_speed_ms = now_ms
+
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_telemetry_ms) >= TELEMETRY_INTERVAL_MS:
+            _send_telemetry()
+            last_telemetry_ms = now_ms
 
         time.sleep_ms(LOOP_SLEEP_MS)
         

@@ -48,6 +48,9 @@ def rotate_coordinates(dest_x, dest_y):
 
 
 def move_coordinates(dest_x, dest_y):
+    desaccelerate_distance = 40
+    max_speed = 70
+    min_speed = 5
 
     rotate_coordinates(dest_x, dest_y)
 
@@ -86,15 +89,20 @@ def move_coordinates(dest_x, dest_y):
         # Coordenadas no sistema rotacionado
         x_prime = ACx*ux + ACy*uy
         y_prime = ACx*ux_perp + ACy*uy_perp
+        remaining_distance = L - x_prime
 
         
-        if L - x_prime < 0:
+        if remaining_distance < 0:
             state.target_speed = 0
             pid_y.reset()
             Servo.set_angle(0)
             break
 
-        state.target_speed = 50
+        if remaining_distance < desaccelerate_distance:
+            state.target_speed = remaining_distance / desaccelerate_distance * (max_speed - min_speed) + min_speed
+        else:
+            state.target_speed = max_speed
+
 
         servo_angle = pid_y.compute(-y_prime, dt) 
         Servo.set_angle(servo_angle)
