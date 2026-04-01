@@ -13,13 +13,12 @@ def get_angle_to_rotate(dest_x, dest_y):
     A = (x_initial, y_initial)
     B = (dest_x, dest_y)
 
-    compass_angle = state.compass_angle
+    compass_angle = state.compass_angle_relative
 
     if compass_angle > 180:
         compass_angle -= 360
 
     angle_to_coord = math.degrees(math.atan2(dest_y - y_initial, dest_x - x_initial))
-
 
     angle_to_rotate = angle_to_coord - compass_angle
 
@@ -29,6 +28,8 @@ def get_angle_to_rotate(dest_x, dest_y):
     return angle_to_rotate
 
 def rotate_coordinates(dest_x, dest_y):
+    initial = True
+
     while True:
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
 
@@ -39,10 +40,16 @@ def rotate_coordinates(dest_x, dest_y):
 
         state.target_speed = 13
 
+        servo_angle = 42
+
         if angle_to_rotate > 0:
-            Servo.set_angle(42)
+            Servo.set_angle(servo_angle)
         else:
-            Servo.set_angle(-42)
+            Servo.set_angle(-servo_angle)
+
+        if initial:
+            initial = False
+            time.sleep(1)
 
         time.sleep(1/20)
 
