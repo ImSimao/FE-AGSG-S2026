@@ -1,7 +1,4 @@
 import init
-import time
-import move_coordinates
-from servo import Servo
 import open_challenge
 
 

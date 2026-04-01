@@ -14,15 +14,15 @@ def open_challenge():
 
     time.sleep(10)
 
-    if Distance.get_left() < Distance.get_right():
-        state.clockwise = -1
+    if Distance.get_left() < Distance.get_right() and Distance.get_left() > 0 or Distance.get_right() <= 0:
+        state.clockwise = 1
     else:
         state.clockwise = -1
 
-    if state.clockwise == -1:
+    if state.clockwise == 1:
         state.set_relative_odom(300-Distance.get_front()-9, Distance.get_left()+3)
     else:
-        state.set_relative_odom(Distance.get_front()-9, 300-Distance.get_right()+3)
+        state.set_relative_odom(300-Distance.get_front()-9, Distance.get_right()+3)
 
     state.current_lane = 1
 
