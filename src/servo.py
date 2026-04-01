@@ -9,7 +9,7 @@ class Servo:
     _MAX_DUTY = 8192   # ~2.5ms em
 
     _CENTER_STEERING = 90
-    _MAX_STEERING_OFFSET = 60
+    _MAX_STEERING_OFFSET = 42
 
     @staticmethod
     def set_angle(angle: int) -> None:

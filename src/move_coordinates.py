@@ -37,12 +37,12 @@ def rotate_coordinates(dest_x, dest_y):
             state.target_speed = 0
             break
 
-        state.target_speed = 30
+        state.target_speed = 13
 
         if angle_to_rotate > 0:
-            Servo.set_angle(60)
+            Servo.set_angle(42)
         else:
-            Servo.set_angle(-60)
+            Servo.set_angle(-42)
 
         time.sleep(1/20)
 

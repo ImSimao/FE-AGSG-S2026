@@ -1,13 +1,12 @@
 import init
 import time
 import move_coordinates
+from servo import Servo
+import open_challenge
 
 
 def main():
-    move_coordinates.move_coordinates(200, 0)
-    move_coordinates.move_coordinates(200, -200)
-    move_coordinates.move_coordinates(0, -200)
-    move_coordinates.move_coordinates(0, 0)
+    open_challenge.open_challenge()
 
 
 if __name__ == "__main__":
