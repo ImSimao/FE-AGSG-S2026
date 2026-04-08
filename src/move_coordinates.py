@@ -18,6 +18,11 @@ def get_angle_to_rotate(dest_x, dest_y):
     if compass_angle > 180:
         compass_angle -= 360
 
+    # Odom: dy = sin(heading)*clockwise — for clockwise=-1, forward in relative
+    # frame matches atan2 bearing -heading, not +heading.
+    if state.clockwise == -1:
+        compass_angle = -compass_angle
+
     angle_to_coord = math.degrees(math.atan2(dest_y - y_initial, dest_x - x_initial))
 
     angle_to_rotate = angle_to_coord - compass_angle
@@ -43,7 +48,7 @@ def rotate_coordinates(dest_x, dest_y):
 
         state.target_speed = 13
 
-        servo_angle = 42
+        servo_angle = 42 * state.clockwise
 
         if angle_to_rotate > 0:
             Servo.set_angle(servo_angle)
@@ -52,10 +57,35 @@ def rotate_coordinates(dest_x, dest_y):
 
         if initial:
             initial = False
-            time.sleep(1)
+            time.sleep(0.5)
 
-        time.sleep(1/20)
+        time.sleep(1/100)
 
+def rotate_angle(angle):
+    while True:
+        angle_to_rotate = angle - state.compass_angle_relative
+
+        if angle_to_rotate > 180:
+            angle_to_rotate -= 360
+
+        if angle_to_rotate < -180:
+            angle_to_rotate += 360
+
+        if abs(angle_to_rotate) < 1.5:
+            Servo.set_angle(0)
+            state.target_speed = 0
+            break
+
+        state.target_speed = 10
+
+        servo_angle = 42
+
+        if angle_to_rotate > 0:
+            Servo.set_angle(servo_angle)
+        else:
+            Servo.set_angle(-servo_angle)
+
+        time.sleep(1/100)
 
 def move_coordinates(dest_x, dest_y):
     desaccelerate_distance = 40
@@ -86,7 +116,7 @@ def move_coordinates(dest_x, dest_y):
     uy_perp = ux
 
     pid_y = PIDController(kp=0.35, ki=0.0, kd=1.6)
-    dt = 1/60
+    dt = 1/100
 
     while True:
         C = state.get_relative_odom
@@ -114,9 +144,6 @@ def move_coordinates(dest_x, dest_y):
 
         servo_angle = pid_y.compute(-y_prime, dt) 
 
-        #if state.clockwise == 1 and state.relative_lane != 2:
-        #    servo_angle = -servo_angle
-
-        Servo.set_angle(servo_angle)
+        Servo.set_angle(servo_angle*state.clockwise)
 
         time.sleep(dt)

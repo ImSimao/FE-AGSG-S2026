@@ -1,18 +1,21 @@
-import init
 import time
 import move_coordinates
-from servo import Servo
 from distance import Distance
 from state import state
 
 
 def open_challenge():
-    move_coordinates.move_coordinates(100, 0)
 
+    state.clockwise = -1
 
-    move_coordinates.move_coordinates(100 + Distance.get_front() - 15, 0)
+    move_coordinates.move_coordinates(50, 0)
 
-    time.sleep(10)
+    if Distance.get_front() > 50 or Distance.get_front() <= 0:
+        move_coordinates.move_coordinates(100, state.odom_y)
+
+    move_coordinates.rotate_angle(0)
+
+    time.sleep(1)
 
     if Distance.get_left() < Distance.get_right() and Distance.get_left() > 0 or Distance.get_right() <= 0:
         state.clockwise = 1
@@ -27,7 +30,7 @@ def open_challenge():
     state.current_lane = 1
 
     while state.current_lane < 12:
-        move_coordinates.move_coordinates(270, 30)
+        move_coordinates.move_coordinates(230, 60)
         state.current_lane += 1
 
     move_coordinates.move_coordinates(150, 50)

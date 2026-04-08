@@ -48,17 +48,14 @@ class State:
                 self.odom_y = 300-y_relative
         elif self.relative_lane == 3:
             if self.clockwise == -1:
-                self.odom_x = self.y_relative
-                self.odom_y = 300-self.x_relative
+                self.odom_x = y_relative
+                self.odom_y = 300-x_relative
             else:
-                self.odom_x = 300-self.y_relative
-                self.odom_y = 300-self.x_relative
+                self.odom_x = 300-y_relative
+                self.odom_y = 300-x_relative
 
     @property
     def get_relative_odom(self):
-        if self.clockwise == 0:
-            return self.odom_x, self.odom_y
-            
         if self.relative_lane == 0:
             if self.clockwise == -1:
                 return self.odom_x, self.odom_y

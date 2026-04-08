@@ -41,7 +41,7 @@ class Telemetry:
         payload = "{:.3f},{:.3f},{:.1f},{:.2f},{:.2f},{:.2f},{:.2f}".format(
             state.odom_x / 100.0,
             state.odom_y / 100.0,
-            state.compass_angle,
+            360 - ((state.compass_angle + (180 if state.clockwise == 1 else 0)) % 360),
             front, rear, left, right,
         )
         checksum = Telemetry._xor_checksum(payload)

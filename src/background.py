@@ -9,9 +9,9 @@ from telemetry import Telemetry
 
 
 SENSOR_INTERVAL_MS    = 1/5  * 1000  # 50 Hz
-ODOM_INTERVAL_MS      = 1/50 * 1000  # 100 Hz
+ODOM_INTERVAL_MS      = 1/100 * 1000  # 100 Hz
 SPEED_INTERVAL_MS     = 1/10  * 1000  # 10 Hz
-TELEMETRY_INTERVAL_MS = 1/5  * 1000  # 10 Hz
+TELEMETRY_INTERVAL_MS = 1/20  * 1000  # 10 Hz
 LOOP_SLEEP_MS = 1
 
 
@@ -92,8 +92,8 @@ def _update_odometry(last_distance_cm):
     delta_cm = current_distance_cm - last_distance_cm
     theta_rad = math.radians(compass_angle)
 
-    state.odom_x += delta_cm * math.cos(theta_rad)
-    state.odom_y += delta_cm * math.sin(theta_rad)
+    state.odom_x += delta_cm * math.cos(theta_rad) * state.clockwise * -1
+    state.odom_y += delta_cm * math.sin(theta_rad) * state.clockwise
     return current_distance_cm
 
 
