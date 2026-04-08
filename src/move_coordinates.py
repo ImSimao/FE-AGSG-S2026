@@ -3,11 +3,11 @@ from state import state
 from servo import Servo
 import math
 from pid import PIDController
+from telemetry import Telemetry
 
 
 def get_angle_to_rotate(dest_x, dest_y):
-    x_initial  = state.relative_odom_x
-    y_initial = state.relative_odom_y
+    x_initial, y_initial = state.get_relative_odom
 
     # Coordenadas absolutas
     A = (x_initial, y_initial)
@@ -24,6 +24,9 @@ def get_angle_to_rotate(dest_x, dest_y):
 
     if angle_to_rotate > 180:
         angle_to_rotate -= 360
+
+    if angle_to_rotate < -180:
+        angle_to_rotate += 360
 
     return angle_to_rotate
 
@@ -61,8 +64,7 @@ def move_coordinates(dest_x, dest_y):
 
     rotate_coordinates(dest_x, dest_y)
 
-    x_initial  = state.relative_odom_x
-    y_initial = state.relative_odom_y
+    x_initial, y_initial = state.get_relative_odom
 
     # Coordenadas absolutas
     A = (x_initial, y_initial)
@@ -87,7 +89,7 @@ def move_coordinates(dest_x, dest_y):
     dt = 1/60
 
     while True:
-        C = (state.relative_odom_x, state.relative_odom_y)
+        C = state.get_relative_odom
 
         # Vetor AC
         ACx = C[0] - A[0]
@@ -110,8 +112,11 @@ def move_coordinates(dest_x, dest_y):
         else:
             state.target_speed = max_speed
 
-
         servo_angle = pid_y.compute(-y_prime, dt) 
+
+        #if state.clockwise == 1 and state.relative_lane != 2:
+        #    servo_angle = -servo_angle
+
         Servo.set_angle(servo_angle)
 
         time.sleep(dt)

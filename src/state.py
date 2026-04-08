@@ -24,14 +24,6 @@ class State:
         return (self.compass_angle + 
         (self.relative_lane * -90.0 * self.clockwise) + 360.0) % 360.0
 
-    @property
-    def relative_odom_x(self):
-        return self.get_relative_odom[0]
-
-    @property
-    def relative_odom_y(self):
-        return self.get_relative_odom[1]
-
     def set_relative_odom (self, x_relative, y_relative):
         if self.relative_lane == 0:
             if self.clockwise == -1:
