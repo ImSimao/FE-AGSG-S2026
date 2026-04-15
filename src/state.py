@@ -20,6 +20,10 @@ class State:
         return self.relative_lane == 0
 
     @property
+    def lap(self):
+        return self.current_lane // 4
+
+    @property
     def compass_angle_relative(self):
         return (self.compass_angle + 
         (self.relative_lane * -90.0 * self.clockwise) + 360.0) % 360.0

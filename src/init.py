@@ -1,6 +1,6 @@
 from machine import freq
 
-freq(int(3 * 100_000_000))
+freq(int(2.5 * 100_000_000))
 
 import _thread
 

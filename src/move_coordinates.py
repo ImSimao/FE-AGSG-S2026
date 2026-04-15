@@ -4,6 +4,7 @@ from servo import Servo
 import math
 from pid import PIDController
 from telemetry import Telemetry
+from math import sin, cos
 
 
 def get_angle_to_rotate(dest_x, dest_y):
@@ -35,20 +36,28 @@ def get_angle_to_rotate(dest_x, dest_y):
 
     return angle_to_rotate
 
-def rotate_coordinates(dest_x, dest_y):
+def rotate_coordinates(dest_x, dest_y, reverse = False):
     initial = True
+
+    if target_in_rotation_area(dest_x, dest_y):
+        reverse = not reverse
+        return
 
     while True:
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
 
-        if abs(angle_to_rotate) < 1.5:
+        if abs(angle_to_rotate) < 8:
             Servo.set_angle(0)
             state.target_speed = 0
             break
 
-        state.target_speed = 13
+        state.target_speed = 10
 
         servo_angle = 42 * state.clockwise
+
+        if reverse:
+            servo_angle = -servo_angle
+            state.target_speed = -state.target_speed
 
         if angle_to_rotate > 0:
             Servo.set_angle(servo_angle)
@@ -61,7 +70,8 @@ def rotate_coordinates(dest_x, dest_y):
 
         time.sleep(1/100)
 
-def rotate_angle(angle):
+
+def rotate_angle(angle, reverse = False):
     while True:
         angle_to_rotate = angle - state.compass_angle_relative
 
@@ -71,7 +81,7 @@ def rotate_angle(angle):
         if angle_to_rotate < -180:
             angle_to_rotate += 360
 
-        if abs(angle_to_rotate) < 1.5:
+        if abs(angle_to_rotate) < 2:
             Servo.set_angle(0)
             state.target_speed = 0
             break
@@ -80,19 +90,31 @@ def rotate_angle(angle):
 
         servo_angle = 42
 
+        if reverse:
+            servo_angle = -servo_angle
+            state.target_speed = -state.target_speed
+
         if angle_to_rotate > 0:
             Servo.set_angle(servo_angle)
         else:
             Servo.set_angle(-servo_angle)
 
+
         time.sleep(1/100)
 
-def move_coordinates(dest_x, dest_y):
+def move_coordinates(dest_x, dest_y, reverse = False):
+
     desaccelerate_distance = 40
-    max_speed = 70
+    max_speed = 50
     min_speed = 5
 
-    rotate_coordinates(dest_x, dest_y)
+    x_initial, y_initial = state.get_relative_odom
+
+    if reverse:
+        rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
+    else:
+        rotate_coordinates(dest_x, dest_y)
+
 
     x_initial, y_initial = state.get_relative_odom
 
@@ -144,6 +166,44 @@ def move_coordinates(dest_x, dest_y):
 
         servo_angle = pid_y.compute(-y_prime, dt) 
 
+        if reverse:
+            state.target_speed = -state.target_speed
+            servo_angle = -servo_angle
+
+
+
         Servo.set_angle(servo_angle*state.clockwise)
 
         time.sleep(dt)
+
+
+def circle_center_left(xr, yr, theta, radius):
+    xc = xr - radius * sin(theta)
+    yc = yr + radius * cos(theta)
+    return xc, yc
+
+def circle_center_right(xr, yr, theta, radius):
+    xc = xr + radius * sin(theta)
+    yc = yr - radius * cos(theta)
+    return xc, yc
+
+def is_inside_circle(xt, yt, xc, yc, radius):
+    dx = xt - xc
+    dy = yt - yc
+    return (dx * dx + dy * dy) <= (radius * radius)
+
+def target_in_left_rotation_area(xr, yr, theta, xt, yt, radius):
+    xc, yc = circle_center_left(xr, yr, theta, radius)
+    return is_inside_circle(xt, yt, xc, yc, radius)
+
+def target_in_right_rotation_area(xr, yr, theta, xt, yt, radius):
+    xc, yc = circle_center_right(xr, yr, theta, radius)
+    return is_inside_circle(xt, yt, xc, yc, radius)
+
+def target_in_rotation_area(xt, yt, radius=25):
+    xr, yr = state.get_relative_odom
+    theta = math.radians(state.compass_angle_relative)
+
+    left = target_in_left_rotation_area(xr, yr, theta, xt, yt, radius)
+    right = target_in_right_rotation_area(xr, yr, theta, xt, yt, radius)
+    return left or right
