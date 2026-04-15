@@ -8,7 +8,7 @@ class Servo:
     _MIN_DUTY = 1638   # ~0.5ms em 50Hz
     _MAX_DUTY = 8192   # ~2.5ms em
 
-    _CENTER_STEERING = 90
+    _CENTER_STEERING = 110
     _MAX_STEERING_OFFSET = 42
 
     @staticmethod

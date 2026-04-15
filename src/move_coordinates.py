@@ -41,7 +41,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
 
     if target_in_rotation_area(dest_x, dest_y):
         reverse = not reverse
-        return
+        #return
 
     while True:
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
