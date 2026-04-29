@@ -53,7 +53,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
 
         state.target_speed = 10
 
-        servo_angle = 42 * state.clockwise
+        servo_angle = Servo._MAX_STEERING_OFFSET * state.clockwise
 
         if reverse:
             servo_angle = -servo_angle
@@ -88,7 +88,7 @@ def rotate_angle(angle, reverse = False):
 
         state.target_speed = 10
 
-        servo_angle = 42
+        servo_angle = Servo._MAX_STEERING_OFFSET
 
         if reverse:
             servo_angle = -servo_angle

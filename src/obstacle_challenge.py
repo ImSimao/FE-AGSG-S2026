@@ -5,24 +5,27 @@ from state import state
 
 #Coordenadas
 
-ninety_degrees_distance_offset = 9
 
-traffic_lane_center = 50
+
+
+ninety_degrees_distance_offset = 18
+
+traffic_lane_center = (state.parede_fora - state.parede_dentro) / 4
 traffic_lane_y_offset = 32
 traffic_lane_y_parking = 11.5
-firt_obstacle_camera_coord = (100, 50)
-second_obstacle_camera_coord = (175, 50)
-first_traffic_lane_camera_x = 115
-final_traffic_lane_x = 300 - traffic_lane_center - traffic_lane_y_offset + ninety_degrees_distance_offset
-parking_x = 120
+firt_obstacle_camera_coord = (100, traffic_lane_center)
+second_obstacle_camera_coord = (175, traffic_lane_center)
+first_traffic_lane_camera_x = 100
+final_traffic_lane_x = state.parede_fora - traffic_lane_center - traffic_lane_y_offset
+parking_x = 123
 parking_y = 25
 
 
 def get_traffic_lane_y(traffic_inside, rotate = False, reverse = False):
         return traffic_lane_center \
         + ((traffic_lane_y_offset * traffic_inside) if not state.is_lane_with_parking or traffic_inside == 1 \
-            else (traffic_lane_y_offset - traffic_lane_y_parking)) \
-             - (ninety_degrees_distance_offset * traffic_inside if rotate else 0 * (-1 if reverse else 1))
+            else - traffic_lane_y_parking ) \
+             - (ninety_degrees_distance_offset * traffic_inside if rotate else 0)
  
 
 
@@ -35,14 +38,19 @@ def obstacle_challenge():
         state.clockwise = -1
 
     if state.clockwise == 1:
-        state.set_relative_odom(100+2, Distance.get_left()+3)
+        state.set_relative_odom(100+1.75, Distance.get_left()+2.5)
         rotate_coordinates(200, 100)
     else:
-        state.set_relative_odom(200-Distance.get_front()-9, Distance.get_right()+3)
+        state.set_relative_odom(200-Distance.get_front()-9, Distance.get_right()+2.5)
         rotate_coordinates(200, 60)
 
-    traffic_inside = 1
-    move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(traffic_inside, True))
+    traffic_inside = -1
+
+    if traffic_inside == 1:
+        move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(traffic_inside, True))
+    else:
+        rotate_angle(65*state.clockwise)
+    
     move_coordinates(230, get_traffic_lane_y(traffic_inside))
     
     voltas = 1
@@ -51,7 +59,7 @@ def obstacle_challenge():
         state.current_lane += 1
 
         is_same_color = False
-        traffic_inside = 1
+        traffic_inside = -1
 
         if state.lap == 0:
             rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1])
@@ -68,7 +76,7 @@ def obstacle_challenge():
         if state.lap == voltas:
             break
 
-        traffic_inside = -1
+        traffic_inside = 1
 
         if state.lap == 0:
             rotate_coordinates(second_obstacle_camera_coord[0], second_obstacle_camera_coord[1])
@@ -77,20 +85,28 @@ def obstacle_challenge():
                 rotate_angle(0, reverse=True)
         
         if not is_same_color:
-            rotate_angle(-90*state.clockwise)
+            rotate_angle(90*traffic_inside*state.clockwise)
             move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(traffic_inside, True))
             rotate_angle(0)
 
-        move_coordinates(final_traffic_lane_x, get_traffic_lane_y(traffic_inside))
+        final_traffic_lane_x1 = final_traffic_lane_x
+
+        if traffic_inside == 1:
+            final_traffic_lane_x1 += ninety_degrees_distance_offset
+        else:
+            final_traffic_lane_x1 -= ninety_degrees_distance_offset
+
+        move_coordinates(final_traffic_lane_x1, get_traffic_lane_y(traffic_inside))
 
 
     #Parking
-    if traffic_inside == True:
+    if traffic_inside == 1:
         move_coordinates(state.get_relative_odom[0], parking_y)
-        rotate_angle(0, reverse=True)
-        move_coordinates(parking_x, state.get_relative_odom[1])
-        rotate_angle(90 * state.clockwise, reverse=True)
-        rotate_angle(0, reverse=True)
+    
+    rotate_angle(0, reverse=True)
+    move_coordinates(parking_x, state.get_relative_odom[1])
+    rotate_angle(90 * state.clockwise, reverse=True)
+    rotate_angle(0, reverse=True)
         
 
 

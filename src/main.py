@@ -8,7 +8,8 @@ import time
 from servo import Servo
 
 def main():
-     obstacle_challenge()
+
+    obstacle_challenge()
 
 
 if __name__ == "__main__":
