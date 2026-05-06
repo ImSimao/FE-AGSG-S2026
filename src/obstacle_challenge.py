@@ -1,4 +1,5 @@
 import time
+from background import get_odom_side_sonar
 from  move_coordinates import move_coordinates, rotate_angle, rotate_coordinates
 from distance import Distance
 from state import state
@@ -37,11 +38,13 @@ def obstacle_challenge():
     else:
         state.clockwise = -1
 
+    distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
+
     if state.clockwise == 1:
-        state.set_relative_odom(100+1.75, Distance.get_left()+2.5)
+        state.set_relative_odom(100+1.75, distance_left)
         rotate_coordinates(200, 100)
     else:
-        state.set_relative_odom(200-Distance.get_front()-9, Distance.get_right()+2.5)
+        state.set_relative_odom(200-distance_front, distance_right)
         rotate_coordinates(200, 60)
 
     traffic_inside = -1

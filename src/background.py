@@ -16,6 +16,7 @@ ADJUST_ODOM_INTERVAL_MS = 1/5  * 1000  # 1 Hz
 LOOP_SLEEP_MS = 1
 
 
+
 class CruiseControl:
     def __init__(self, max_pwm=1, min_pwm=-1,
                  max_accel=1/3, max_decel=2/3):
@@ -106,21 +107,18 @@ def corrigir_canto():
         return
 
 
-    distance_front = Distance.get_front() + (11.2-1.75-0.5)
+    distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
+
 
     if distance_front > 80 or distance_front <= 5:
         return
 
     if state.clockwise == 1:
-        distance_left = Distance.get_left()
-
         if distance_left > 80 or distance_left <= 5:
             return
 
         state.set_relative_odom(distance_left + 2.55, distance_front)
     else:
-        distance_right = Distance.get_right()
-
         if distance_right > 80 or distance_right <= 5:
             return
 
@@ -129,6 +127,8 @@ def corrigir_canto():
 
 def corrigir_corredor():
     curr_x, curr_y = state.get_relative_odom
+
+    distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
     if abs(state.compass_angle_relative) > 10:
         return
@@ -144,8 +144,6 @@ def corrigir_corredor():
         return
 
     if curr_y < 50 and state.clockwise == 1 or curr_y > 50 and state.clockwise == -1:
-        distance_left = Distance.get_left()
-
         if distance_left > 50 or distance_left <= 5:
             return
 
@@ -154,8 +152,6 @@ def corrigir_corredor():
 
         state.set_relative_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
     else:
-        distance_right = Distance.get_right()
-
         if distance_right > 50 or distance_right <= 5:
             return
 
@@ -163,7 +159,47 @@ def corrigir_corredor():
 
         state.set_relative_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
 
+def get_abs_distance(sonar_offset, angle, distance, is_side = False):
 
+    hipotenusa = math.sqrt(sonar_offset[0]**2 + (sonar_offset[1]+distance)**2) if is_side else distance + sonar_offset[0]
+
+    angle1 =  math.radians(90 - angle) - (math.atan2(sonar_offset[1]+distance, sonar_offset[0]) if is_side else 0)
+    
+    y = hipotenusa * math.cos(angle1)
+
+
+    return y
+
+def get_odom_side_sonar():
+    sonar_interval = 1/10
+    distance_delta = sonar_interval * state.current_speed
+    side_sonar_offset = (7.97, 2.55)
+    front_sonar_offset = (8.97, 0)
+    rear_sonar_offset = (1.25, 0)
+
+    angle = state.compass_angle_relative
+
+    while angle > 45:
+        angle -= 90
+
+    while angle < -45:
+        angle += 90
+
+    angle_rad = math.radians(angle)
+    side_distance_backtrack = math.tan(angle_rad) * distance_delta
+
+
+    is_positive_angle = angle > 0
+
+    if not is_positive_angle:
+        side_distance_backtrack = -side_distance_backtrack
+
+    distance_left = get_abs_distance(side_sonar_offset, -angle, Distance.get_left() + side_distance_backtrack, True)
+    distance_right = get_abs_distance(side_sonar_offset, angle, Distance.get_right() - side_distance_backtrack, True)
+    distance_front = get_abs_distance(front_sonar_offset, 90-angle, Distance.get_front() - distance_delta)
+    distance_rear = get_abs_distance(rear_sonar_offset, 90+angle, Distance.get_rear() + distance_delta)
+
+    return distance_left, distance_right, distance_front, distance_rear
 
 
 def _update_odometry(last_distance_cm):
