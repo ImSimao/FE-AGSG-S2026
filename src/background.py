@@ -103,7 +103,7 @@ def corrigir_canto():
     if angle > 180:
         angle -= 360
     
-    if abs(90 + angle * state.clockwise) > 10:
+    if abs(90 + angle * state.clockwise) > 5:
         return
 
 
@@ -130,7 +130,7 @@ def corrigir_corredor():
 
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
-    if abs(state.compass_angle_relative) > 10:
+    if abs(state.compass_angle_relative) > 5:
         return
 
     #if curr_y > 50:    

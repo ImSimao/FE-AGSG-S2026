@@ -18,8 +18,9 @@ firt_obstacle_camera_coord = (100, traffic_lane_center)
 second_obstacle_camera_coord = (175, traffic_lane_center)
 first_traffic_lane_camera_x = 100
 final_traffic_lane_x = state.parede_fora - traffic_lane_center - traffic_lane_y_offset
-parking_x = 123
-parking_y = 25
+parking_x_offset = 23
+parking_gap = 30
+parking_y = 30
 
 
 def get_traffic_lane_y(traffic_inside, rotate = False, reverse = False):
@@ -47,7 +48,7 @@ def obstacle_challenge():
         state.set_relative_odom(200-distance_front, distance_right)
         rotate_coordinates(200, 60)
 
-    traffic_inside = -1
+    traffic_inside = 1
 
     if traffic_inside == 1:
         move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(traffic_inside, True))
@@ -61,8 +62,8 @@ def obstacle_challenge():
     while state.lap <= voltas:
         state.current_lane += 1
 
-        is_same_color = False
-        traffic_inside = -1
+        is_same_color = True
+        traffic_inside = 1
 
         if state.lap == 0:
             rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1])
@@ -103,11 +104,15 @@ def obstacle_challenge():
 
 
     #Parking
+    if state.clockwise == -1 and traffic_inside == 1:
+        move_coordinates(160, get_traffic_lane_y(traffic_inside))
+
     if traffic_inside == 1:
+        rotate_angle(-90 * state.clockwise)
         move_coordinates(state.get_relative_odom[0], parking_y)
     
     rotate_angle(0, reverse=True)
-    move_coordinates(parking_x, state.get_relative_odom[1])
+    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, state.get_relative_odom[1])
     rotate_angle(90 * state.clockwise, reverse=True)
     rotate_angle(0, reverse=True)
         
