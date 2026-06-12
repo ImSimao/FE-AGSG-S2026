@@ -26,10 +26,9 @@ sensor.set_hmirror(True)
 sensor.skip_frames(time=2000)
 clock = time.clock()
 
-p0 = pyb.Pin("P0", pyb.Pin.OUT_PP)
-p1 = pyb.Pin("P1", pyb.Pin.OUT_PP)
-p2 = pyb.Pin("P2", pyb.Pin.OUT_PP)
-p3 = pyb.Pin("P3", pyb.Pin.OUT_PP)
+
+uart = pyb.UART(3, 115200, timeout_char=1000)  # TX on P4
+
 while True:
     clock.tick()
     img = sensor.snapshot()
@@ -84,7 +83,10 @@ while True:
             best_color = color
         
         valid_blobs.append([blob.cx(), blob.y()+blob.h(), color])
-    
+
+    parts = ["{},{},{}".format(cx, cy, color) for cx, cy, color in valid_blobs]
+    uart.write(("CAM:" + ";".join(parts) + "\n") if parts else "CAM:\n")
+
     if best_blob:
         if DEBUG:
             img.draw_rectangle(best_blob.rect(), color=(0, 255, 255))

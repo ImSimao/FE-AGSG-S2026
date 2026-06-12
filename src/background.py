@@ -1,4 +1,5 @@
 from distance import Distance
+from camera import Camera
 import time
 import math
 from compass import Compass
@@ -9,6 +10,7 @@ from telemetry import Telemetry
 
 
 SENSOR_INTERVAL_MS    = 1/5  * 1000  # 50 Hz
+CAMERA_INTERVAL_MS    = 1/200 * 1000  # 200 Hz
 ODOM_INTERVAL_MS      = 1/100 * 1000  # 100 Hz
 SPEED_INTERVAL_MS     = 1/10  * 1000  # 10 Hz
 TELEMETRY_INTERVAL_MS = 1/20  * 1000  # 10 Hz
@@ -84,6 +86,9 @@ cruiseControl = CruiseControl()
 
 def _read_distance_sensors():
     Distance.get_sensor_data()
+
+def _read_camera():
+    Camera.update()
 
 def _adjust_odometry():
     if state.clockwise == 0:
@@ -240,6 +245,7 @@ def background_task():
     last_distance_cm = Encoder.distance_cm()
     last_speed_cm = last_distance_cm
     last_sensor_ms = time.ticks_ms()
+    last_camera_ms = last_sensor_ms
     last_odom_ms = last_sensor_ms
     last_speed_ms = last_sensor_ms
     last_telemetry_ms = last_sensor_ms
@@ -252,6 +258,11 @@ def background_task():
         if time.ticks_diff(now_ms, last_sensor_ms) >= SENSOR_INTERVAL_MS:
             _read_distance_sensors()
             last_sensor_ms = now_ms
+
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_camera_ms) >= CAMERA_INTERVAL_MS:
+            _read_camera()
+            last_camera_ms = now_ms
 
         now_ms = time.ticks_ms()
         if time.ticks_diff(now_ms, last_odom_ms) >= ODOM_INTERVAL_MS:
