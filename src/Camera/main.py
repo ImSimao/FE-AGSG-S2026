@@ -1,5 +1,6 @@
 import sensor, image, time, pyb
-DEBUG = True
+DEBUG = False
+
 GREEN_THRESHOLDS = [
     (0, 100, -128, -9, 0, 127)
 ]
@@ -42,6 +43,9 @@ while True:
         pixels_threshold=80,
         area_threshold=80
     )
+
+    valid_blobs = []
+
     for blob in blobs:
         w = blob.w()
         h = blob.h()
@@ -78,27 +82,13 @@ while True:
             best_area = area
             best_blob = blob
             best_color = color
+        
+        valid_blobs.append([blob.cx(), blob.y()+blob.h(), color])
+    
     if best_blob:
         if DEBUG:
             img.draw_rectangle(best_blob.rect(), color=(0, 255, 255))
             img.draw_string(5, 5, best_color, color=(255, 255, 255))
-        if best_color == "RED":
-            p0.high()
-        else:
-            p0.low()
-        cx = best_blob.cx()
-        left = img.width() // 3
-        right = (img.width() * 2) // 3
-        if cx < left:
-            p1.low(); p2.low(); p3.high()
-        elif cx > right:
-            p1.high(); p2.low(); p3.low()
-        else:
-            p1.low(); p2.high(); p3.low()
-    else:
-        p0.low()
-        p1.low()
-        p2.low()
-        p3.low()
+
     if DEBUG:
         img.draw_string(5, 20, "FPS: " + str(clock.fps()), color=(255, 255, 255))

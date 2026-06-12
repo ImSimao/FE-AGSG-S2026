@@ -2,8 +2,8 @@ import math
 from state import state
 
 camera_angle = 70
-camera_distance = 50
-robot_distance_from_camera = 9
+camera_distance = 100
+robot_distance_from_camera = 13.5
 
 
 def get_colour_position(traffic_x, traffic_y):
