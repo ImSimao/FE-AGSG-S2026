@@ -1,5 +1,5 @@
 import sensor, image, time, pyb
-DEBUG = False
+DEBUG = True
 
 GREEN_THRESHOLDS = [
     (0, 100, -128, -9, 0, 127)
@@ -81,7 +81,7 @@ while True:
             best_area = area
             best_blob = blob
             best_color = color
-        
+
         valid_blobs.append([blob.cx(), blob.y()+blob.h(), color])
 
     parts = ["{},{},{}".format(cx, cy, color) for cx, cy, color in valid_blobs]

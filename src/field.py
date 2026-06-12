@@ -66,6 +66,10 @@ class Lane:
             Field.LANES[(self.lane_index + 1) % 4].set_signal(0, position_index, signal)
             return
 
+
+        
+        print ("Set signal in zone", zone_index, position_index, signal)
+
         if zone_index == 0:
             if not self.can_register_signal_in_zone(self.zones[0:2]):
                 return
@@ -77,6 +81,7 @@ class Lane:
         if zone_index == 2:
             if not self.can_register_signal_in_zone(self.zones[1:3]):
                 return
+
 
         self.zones[zone_index][position_index] = signal
 
@@ -120,6 +125,8 @@ class Lane:
 
         if sides[0] == None or sides[1] == None:
             sides = [-1, -1]
+
+        return sides
 
         
         
