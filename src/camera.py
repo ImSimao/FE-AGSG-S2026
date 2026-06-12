@@ -143,13 +143,14 @@ def get_traffic_lane_inside_pov():
             relative_angle = (relative_angle + 180) % 360 - 180
 
             if abs(relative_angle) <= camera_angle / 2:
-                position_inside_pov.append(
+                position_inside_pov.append({
                     x: lane[0],
                     y: lane[1],
                     pos: lane[2],
                     side: lane[3],
                     angle: relative_angle,
                     distance: distance
+                    }
                 )
     return position_inside_pov
 

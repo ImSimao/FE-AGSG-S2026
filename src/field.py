@@ -7,6 +7,9 @@ def is_color(traffic_signal):
 def is_empty(traffic_signal):
     return traffic_signal == TrafficSignal.EMPTY
 
+def is_unknown(traffic_signal):
+    return traffic_signal == TrafficSignal.UNKNOWN
+
 class TrafficSignal:
     GREEN = "GREEN"
     RED = "RED"
@@ -45,10 +48,10 @@ class Lane:
         return color_total != 0 or empty_total == 4
 
     def can_enter_lane(self):
-        return self.can_enter_zone(self.zones[0:1])
+        return self.can_enter_zone(self.zones[0:2])
 
     def can_exit_lane(self):
-        return self.can_enter_zone(self.zones[1:2])
+        return self.can_enter_zone(self.zones[1:3])
 
     def can_register_signal_in_zone(self, zones):
         for zone in zones:
@@ -64,7 +67,7 @@ class Lane:
             return
 
         if zone_index == 0:
-            if not self.can_register_signal_in_zone(self.zones[0:1]):
+            if not self.can_register_signal_in_zone(self.zones[0:2]):
                 return
 
         if zone_index == 1:
@@ -72,7 +75,7 @@ class Lane:
                 return
 
         if zone_index == 2:
-            if not self.can_register_signal_in_zone(self.zones[1:2]):
+            if not self.can_register_signal_in_zone(self.zones[1:3]):
                 return
 
         self.zones[zone_index][position_index] = signal
@@ -88,15 +91,15 @@ class Lane:
                     zone_colors[k] = traffic_signal
 
         if zone_colors[1] != None:
-            side = 1 if zone_colors[1] == TrafficSignal.GREEN else 0
+            side = 1 if zone_colors[1] == TrafficSignal.GREEN else -1
             sides[0] = side
             sides[1] = side
 
         elif zone_colors[0] != None:
-            sides [0] = 1 if zone_colors[0] == TrafficSignal.GREEN else 0
+            sides [0] = 1 if zone_colors[0] == TrafficSignal.GREEN else -1
 
         elif zone_colors[2] != None:
-            sides [1] = 1 if zone_colors[2] == TrafficSignal.GREEN else 0
+            sides [1] = 1 if zone_colors[2] == TrafficSignal.GREEN else -1
 
         if sides[0] == None:
             sides[0] = sides [1]
@@ -105,18 +108,18 @@ class Lane:
             sides[1] = sides[0]
 
         if state.clockwise == -1:
-            if sides[0] == 0:
+            if sides[0] == -1:
                 sides[0] = 1
             else:
-                sides[0] = 0
+                sides[0] = -1
             
-            if sides[1] == 0:
+            if sides[1] == -1:
                 sides[1] = 1
             else:
-                sides[1] = 0
+                sides[1] = -1
 
         if sides[0] == None or sides[1] == None:
-            sides = [0, 0]
+            sides = [-1, -1]
 
         
         
@@ -144,3 +147,17 @@ class Field:
     @staticmethod
     def lanes_sides():
         return Field.LANES[state.relative_lane].lanes_sides()
+
+    @staticmethod
+    def parking_traffic_exit_confirmation():
+        color_total = 0
+        color_unknown = 0
+
+        zones = Field.LANES[state.relative_lane].zones
+        for zone in zones[1:3] if state.clockwise == 1 else zones[2:3]:
+            if is_color(zone[0]):
+                color_total += 1
+            if is_unknown(zone[0]):
+                color_unknown += 1
+        
+        return color_total == 1 or color_unknown == 0
