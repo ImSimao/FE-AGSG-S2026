@@ -51,7 +51,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
             state.target_speed = 0
             break
 
-        state.target_speed = 10
+        state.target_speed = 15
 
         servo_angle = Servo._MAX_STEERING_OFFSET * state.clockwise
 
@@ -86,7 +86,7 @@ def rotate_angle(angle, reverse = False):
             state.target_speed = 0
             break
 
-        state.target_speed = 10
+        state.target_speed = 15
 
         servo_angle = Servo._MAX_STEERING_OFFSET
 
@@ -105,8 +105,8 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False):
 
     desaccelerate_distance = 40
-    max_speed = 50
-    min_speed = 5
+    max_speed = 60
+    min_speed = 15
 
     x_initial, y_initial = state.get_relative_odom
 

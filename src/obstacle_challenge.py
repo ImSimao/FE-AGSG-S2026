@@ -66,6 +66,7 @@ def obstacle_challenge():
         traffic_inside = 1
 
         if state.lap == 0:
+            move_coordinates (50, 50)
             rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1])
         
             if traffic_inside == 1:
