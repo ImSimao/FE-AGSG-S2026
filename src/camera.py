@@ -4,7 +4,7 @@ from machine import UART, Pin
 from state import state
 
 camera_angle = 70
-camera_distance = 70
+camera_distance = 90
 robot_distance_from_camera = 13.5
 
 
@@ -77,6 +77,7 @@ class Camera:
                 print("Camera UART read error:", e)
 
         blobs = Camera._last_blobs.copy()
+ 
         for cx, cy, color in blobs:
             get_colour_position(cx, cy, color)
         return blobs
@@ -100,7 +101,7 @@ def get_colour_position(traffic_x, traffic_y, signal):
 
     distance = math.sqrt(dx**2 + dy**2)
 
-    if distance > 55:
+    if distance > 65:
         return
 
     relative_angle = math.degrees(math.atan2(dy, dx))
@@ -109,8 +110,9 @@ def get_colour_position(traffic_x, traffic_y, signal):
     possible_traffic_positions = get_traffic_lane_inside_pov()
 
     for position in possible_traffic_positions:
-        if abs(position["angle"] - relative_angle) <= max_angle_difference:
-            Field.set_signal(position["pos"], position["side"], signal)
+        #if abs(position["angle"] - relative_angle) <= max_angle_difference:
+        Field.set_signal(position["pos"], position["side"], signal)
+        return
 
 
 def get_traffic_lane_inside_pov():
@@ -119,7 +121,7 @@ def get_traffic_lane_inside_pov():
         [100, 60, 0, 0],
         [150, 60, 1, 0],
         [200, 60, 2, 0],
-        [240, 100, 4, 0]
+        [240, 100, 3, 0]
     ];
 
     if not state.is_lane_with_parking:
@@ -128,7 +130,7 @@ def get_traffic_lane_inside_pov():
         traffic_coord.append([200, 40, 2, 1])
 
     elif state.relative_lane != 3:
-        traffic_coord.append([260, 100, 4, 1])
+        traffic_coord.append([260, 100, 3, 1])
 
     x, y = state.get_relative_odom
     x_camera = x + robot_distance_from_camera * math.sin(state.compass_angle_relative)
@@ -147,6 +149,7 @@ def get_traffic_lane_inside_pov():
             relative_angle = (relative_angle + 180) % 360 - 180
 
             if abs(relative_angle) <= camera_angle / 2:
+                
                 position_inside_pov.append({
                     "x": lane[0],
                     "y": lane[1],

@@ -2,10 +2,10 @@ import sensor, image, time, pyb
 DEBUG = True
 
 GREEN_THRESHOLDS = [
-    (0, 100, -128, -9, 0, 127)
+    (0, 100, -128, -9, -37, 127)
 ]
 RED_THRESHOLDS = [
-    (0, 100, 17, 127, 24, 127)
+    (0, 100, 17, 127, -21, 127)
 ]
 THRESHOLDS = RED_THRESHOLDS + GREEN_THRESHOLDS
 
@@ -54,21 +54,12 @@ while True:
         if ratio > 2.5:
             continue
 
-        if ratio < 1:
+        if ratio < 0.5:
             continue
-
 
         area = blob.pixels()
         code = blob.code()
-        if DEBUG:
-            img.draw_rectangle(blob.rect())
-            img.draw_cross(blob.cx(), blob.cy())
-            img.draw_string(
-                blob.x(),
-                blob.y() - 10,
-                str(code),
-                color=(255, 255, 255)
-            )
+
         if code == 1:
             color = "RED"
         elif code == 2:
@@ -81,6 +72,20 @@ while True:
             best_area = area
             best_blob = blob
             best_color = color
+
+        density = blob.density()
+        if color == "RED" and density < 0.8:
+            continue
+
+        if DEBUG:
+            img.draw_rectangle(blob.rect())
+            img.draw_cross(blob.cx(), blob.cy())
+            img.draw_string(
+                blob.x(),
+                blob.y() - 10,
+                "{} {:.2f}".format(code, density),
+                color=(255, 255, 255)
+            )
 
         valid_blobs.append([blob.cx(), blob.y()+blob.h(), color])
 

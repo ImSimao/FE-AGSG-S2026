@@ -1,4 +1,5 @@
 from state import state
+from telemetry import Telemetry
 
 
 def is_color(traffic_signal):
@@ -66,10 +67,6 @@ class Lane:
             Field.LANES[(self.lane_index + 1) % 4].set_signal(0, position_index, signal)
             return
 
-
-        
-        print ("Set signal in zone", zone_index, position_index, signal)
-
         if zone_index == 0:
             if not self.can_register_signal_in_zone(self.zones[0:2]):
                 return
@@ -82,6 +79,8 @@ class Lane:
             if not self.can_register_signal_in_zone(self.zones[1:3]):
                 return
 
+        
+        Telemetry.log(f"Set signal in zone {zone_index} {position_index} {signal}")
 
         self.zones[zone_index][position_index] = signal
 
@@ -90,7 +89,7 @@ class Lane:
         zone_colors = [None, None, None]
         sides = [None, None]
 
-        for zone, k in self.zones:
+        for k, zone in enumerate(self.zones):
             for traffic_signal in zone:
                 if is_color(traffic_signal):
                     zone_colors[k] = traffic_signal
@@ -99,12 +98,12 @@ class Lane:
             side = 1 if zone_colors[1] == TrafficSignal.GREEN else -1
             sides[0] = side
             sides[1] = side
+        else:
+            if zone_colors[0] != None:
+                sides [0] = 1 if zone_colors[0] == TrafficSignal.GREEN else -1
 
-        elif zone_colors[0] != None:
-            sides [0] = 1 if zone_colors[0] == TrafficSignal.GREEN else -1
-
-        elif zone_colors[2] != None:
-            sides [1] = 1 if zone_colors[2] == TrafficSignal.GREEN else -1
+            if zone_colors[2] != None:
+                sides [1] = 1 if zone_colors[2] == TrafficSignal.GREEN else -1
 
         if sides[0] == None:
             sides[0] = sides [1]
@@ -139,8 +138,14 @@ class Field:
         Lane(3),
     ]
 
+    exiting_park = True
+
     @staticmethod
     def set_signal(zone_index, position_index, signal):
+        if Field.exiting_park and zone_index == 1:
+            Field.exiting_park = False
+            zone_index = 2
+    
         Field.LANES[state.relative_lane].set_signal(zone_index, position_index, signal)
 
     @staticmethod
