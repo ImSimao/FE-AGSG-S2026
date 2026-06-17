@@ -11,6 +11,9 @@ def is_empty(traffic_signal):
 def is_unknown(traffic_signal):
     return traffic_signal == TrafficSignal.UNKNOWN
 
+ZONE_POV_THRESHOLD_MS = 2000
+
+
 class TrafficSignal:
     GREEN = "GREEN"
     RED = "RED"
@@ -29,30 +32,51 @@ class Lane:
             [TrafficSignal.UNKNOWN, TrafficSignal.UNKNOWN],
         ]
 
+        self.zone_pov_ms = [
+            [0, 0],
+            [0, 0],
+            [0, 0],
+        ]
+
         if lane_index == 0:
             for zone in self.zones:
                 zone[1] = TrafficSignal.EMPTY
 
 
 
-    def can_enter_zone(self, zones):
+    def add_pov_time(self, zone_index, position_index, dt_ms):
+        if zone_index == 3:
+            Field.LANES[(self.lane_index + 1) % 4].add_pov_time(0, position_index, dt_ms)
+            return
+
+        self.zone_pov_ms[zone_index][position_index] += dt_ms
+
+    def _is_effectively_empty(self, zone_index, position_index):
+        signal = self.zones[zone_index][position_index]
+        if is_empty(signal):
+            return True
+        if is_unknown(signal) and self.zone_pov_ms[zone_index][position_index] >= ZONE_POV_THRESHOLD_MS:
+            return True
+        return False
+
+    def can_enter_zone(self, zone_indices):
         color_total = 0
         empty_total = 0
 
-        for zone in zones:
-            for traffic_signal in zone:
-                if is_color(traffic_signal):
+        for zone_index in zone_indices:
+            for position_index in range(2):
+                if is_color(self.zones[zone_index][position_index]):
                     color_total += 1
-                elif is_empty(traffic_signal):
+                elif self._is_effectively_empty(zone_index, position_index):
                     empty_total += 1
-        
+
         return color_total != 0 or empty_total == 4
 
     def can_enter_lane(self):
-        return self.can_enter_zone(self.zones[0:2])
+        return self.can_enter_zone([0, 1])
 
     def can_exit_lane(self):
-        return self.can_enter_zone(self.zones[1:3])
+        return self.can_enter_zone([1, 2])
 
     def can_register_signal_in_zone(self, zones):
         for zone in zones:
@@ -147,6 +171,13 @@ class Field:
             zone_index = 2
     
         Field.LANES[state.relative_lane].set_signal(zone_index, position_index, signal)
+
+    @staticmethod
+    def add_pov_time(zone_index, position_index, dt_ms):
+        if Field.exiting_park and zone_index == 1:
+            zone_index = 2
+
+        Field.LANES[state.relative_lane].add_pov_time(zone_index, position_index, dt_ms)
 
     @staticmethod
     def can_enter_lane():

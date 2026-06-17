@@ -1,4 +1,5 @@
 import math
+import time
 from field import Field
 from machine import UART, Pin
 from state import state
@@ -22,6 +23,7 @@ class Camera:
     _uart = None
     _rx_buffer = b""
     _last_blobs = []
+    _last_pov_ms = None
 
     @staticmethod
     def initialize(uart_id=1, baudrate=115200, rx_pin=9):
@@ -80,7 +82,29 @@ class Camera:
  
         for cx, cy, color in blobs:
             get_colour_position(cx, cy, color)
+
+        Camera._accumulate_pov_time()
         return blobs
+
+    @staticmethod
+    def _accumulate_pov_time():
+        now = time.ticks_ms()
+
+        if state.clockwise == 0:
+            Camera._last_pov_ms = now
+            return
+
+        if Camera._last_pov_ms is None:
+            dt = 0
+        else:
+            dt = time.ticks_diff(now, Camera._last_pov_ms)
+        Camera._last_pov_ms = now
+
+        if dt <= 0:
+            return
+
+        for position in get_traffic_lane_inside_pov():
+            Field.add_pov_time(position["pos"], position["side"], dt)
 
     @staticmethod
     def get_blobs():
