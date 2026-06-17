@@ -82,7 +82,7 @@ def obstacle_challenge():
                 if state.get_relative_odom[0] > 100:
                     break
             
-            move_coordinates(state.get_relative_odom[0] + 30, get_traffic_lane_y(Field.lanes_sides()[0]))
+            move_coordinates(state.get_relative_odom[0] + 35, get_traffic_lane_y(Field.lanes_sides()[0]))
             
 
 
