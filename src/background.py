@@ -108,23 +108,23 @@ def corrigir_canto():
     if angle > 180:
         angle -= 360
     
-    if abs(90 + angle * state.clockwise) > 5:
+    if abs(90 + angle * state.clockwise) > 10:
         return
 
 
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
 
-    if distance_front > 80 or distance_front <= 5:
+    if distance_front > 80 or distance_front <= 4:
         return
 
     if state.clockwise == 1:
-        if distance_left > 80 or distance_left <= 5:
+        if distance_left > 80 or distance_left <= 4:
             return
 
         state.set_relative_odom(distance_left + 2.55, distance_front)
     else:
-        if distance_right > 80 or distance_right <= 5:
+        if distance_right > 80 or distance_right <= 4:
             return
 
         state.set_relative_odom(distance_right + 2.55, distance_front)
@@ -135,21 +135,26 @@ def corrigir_corredor():
 
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
-    if abs(state.compass_angle_relative) > 5:
+    if abs(state.compass_angle_relative) > 10:
         return
 
     #if curr_y > 50:    
-    if curr_x < 110 or curr_x > 180:
+    if curr_x < 100 or curr_x > 180:
         return
         
-    if curr_y < 5 or curr_y > 95:
-        return
+    #if curr_y < 5 or curr_y > 95:
+    #    return
 
     if state.is_lane_with_parking:
-        return
+        if curr_y < 62:
+            if state.clockwise == 1 and curr_x < 150:
+                return
+            if state.clockwise == -1 and curr_x > 150:
+                return
+            
 
     if curr_y < 50 and state.clockwise == 1 or curr_y > 50 and state.clockwise == -1:
-        if distance_left > 50 or distance_left <= 5:
+        if distance_left > 50 or distance_left <= 4:
             return
 
         offset = distance_left + 2.55
@@ -157,7 +162,7 @@ def corrigir_corredor():
 
         state.set_relative_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
     else:
-        if distance_right > 50 or distance_right <= 5:
+        if distance_right > 50 or distance_right <= 4:
             return
 
         offset = distance_right + 2.55

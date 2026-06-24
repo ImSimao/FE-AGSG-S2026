@@ -81,16 +81,16 @@ def obstacle_challenge():
             rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1] if not state.is_lane_with_parking else 60)
             
             while not Field.can_enter_lane():
-                move_coordinates(state.get_relative_odom[0] + 10, 50 if not state.is_lane_with_parking else 60)
-                rotate_angle(0, reverse=True)
+                move_coordinates(state.get_relative_odom[0] + 10, 50 if not state.is_lane_with_parking else 60, rotate=False)
+                
                 if state.get_relative_odom[0] > 100:
                     break
             
             rotate_angle(-90*Field.lanes_sides()[0]*state.clockwise, True)
-            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True, rotate=False))
+            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True), rotate=False)
 
         elif Field.lanes_sides()[0] == 1:
-            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True, rotate=False))
+            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True), rotate=False)
     
         rotate_angle(0)
         move_coordinates(first_traffic_lane_camera_x, get_traffic_lane_y(Field.lanes_sides()[0]), rotate = False)

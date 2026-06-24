@@ -105,7 +105,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
 
     desaccelerate_distance = 40
-    max_speed = 60
+    max_speed = 55
     min_speed = 15
 
     x_initial, y_initial = state.get_relative_odom
