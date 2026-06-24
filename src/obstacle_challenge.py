@@ -82,15 +82,15 @@ def obstacle_challenge():
             
             while not Field.can_enter_lane():
                 move_coordinates(state.get_relative_odom[0] + 10, 50 if not state.is_lane_with_parking else 60)
+                rotate_angle(0, reverse=True)
                 if state.get_relative_odom[0] > 100:
                     break
             
-            move_coordinates(state.get_relative_odom[0] + 35, get_traffic_lane_y(Field.lanes_sides()[0], True))
-            
-
+            rotate_angle(-90*Field.lanes_sides()[0]*state.clockwise, True)
+            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True))
 
         elif Field.lanes_sides()[0] == 1:
-            move_coordinates( state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True))
+            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True))
         
         rotate_angle(0)
         move_coordinates(first_traffic_lane_camera_x, get_traffic_lane_y(Field.lanes_sides()[0]))
@@ -101,6 +101,7 @@ def obstacle_challenge():
 
         if not Field.can_exit_lane():
             rotate_coordinates(second_obstacle_camera_coord[0], second_obstacle_camera_coord[1])
+            time.sleep(1)
 
             sides = Field.lanes_sides()
             if sides[0] == sides[1]:
@@ -111,7 +112,7 @@ def obstacle_challenge():
             move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[1], True))
             rotate_angle(0)
 
-        move_coordinates(210, get_traffic_lane_y(Field.lanes_sides()[1], True))
+        move_coordinates(205, get_traffic_lane_y(Field.lanes_sides()[1]))
 
 
     #Parking
