@@ -11,6 +11,9 @@ def is_empty(traffic_signal):
 def is_unknown(traffic_signal):
     return traffic_signal == TrafficSignal.UNKNOWN
 
+def is_green(traffic_signal):
+    return traffic_signal == TrafficSignal.GREEN
+
 ZONE_POV_THRESHOLD_MS = 2000
 
 
@@ -118,21 +121,21 @@ class Lane:
                 if is_color(traffic_signal):
                     zone_colors[k] = traffic_signal
 
-        if zone_colors[1] != None:
-            side = 1 if zone_colors[1] == TrafficSignal.GREEN else -1
+        if zone_colors[1] is not None:
+            side = 1 if is_green(zone_colors[1]) else -1
             sides[0] = side
             sides[1] = side
         else:
-            if zone_colors[0] != None:
-                sides [0] = 1 if zone_colors[0] == TrafficSignal.GREEN else -1
+            if zone_colors[0] is not None:
+                sides[0] = 1 if is_green(zone_colors[0]) else -1
 
-            if zone_colors[2] != None:
-                sides [1] = 1 if zone_colors[2] == TrafficSignal.GREEN else -1
+            if zone_colors[2] is not None:
+                sides[1] = 1 if is_green(zone_colors[2]) else -1
 
-        if sides[0] == None:
-            sides[0] = sides [1]
+        if sides[0] is None:
+            sides[0] = sides[1]
 
-        if sides[1] == None:
+        if sides[1] is None:
             sides[1] = sides[0]
 
         if state.clockwise == -1:
@@ -146,7 +149,7 @@ class Lane:
             else:
                 sides[1] = -1
 
-        if sides[0] == None or sides[1] == None:
+        if sides[0] is None or sides[1] is None:
             sides = [-1, -1]
 
         return sides
