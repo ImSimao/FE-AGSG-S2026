@@ -3,7 +3,7 @@ from background import get_odom_side_sonar
 from field import Field, Lane
 from  move_coordinates import move_coordinates, rotate_angle, rotate_coordinates
 from distance import Distance
-from state import state
+from state import State, state
 from telemetry import Telemetry
 
 #Coordenadas
@@ -14,7 +14,7 @@ from telemetry import Telemetry
 ninety_degrees_distance_offset = 18
 
 traffic_lane_center = (state.parede_fora - state.parede_dentro) / 4
-traffic_lane_y_offset = 32
+traffic_lane_y_offset = 30    #32
 traffic_lane_y_parking = 11.5
 firt_obstacle_camera_coord = (100, traffic_lane_center)
 second_obstacle_camera_coord = (200, traffic_lane_center)
@@ -60,7 +60,7 @@ def obstacle_challenge():
     else:
         rotate_angle(65*state.clockwise)
     
-    move_coordinates(200, get_traffic_lane_y(Field.lanes_sides()[1]))
+    move_coordinates((State.parede_dentro/2) + (State.parede_fora/2) + 4, get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
     Field.exiting_park = False
     
     voltas = 3
@@ -87,13 +87,13 @@ def obstacle_challenge():
                     break
             
             rotate_angle(-90*Field.lanes_sides()[0]*state.clockwise, True)
-            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True))
+            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True, rotate=False))
 
         elif Field.lanes_sides()[0] == 1:
-            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True))
-        
+            move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True, rotate=False))
+    
         rotate_angle(0)
-        move_coordinates(first_traffic_lane_camera_x, get_traffic_lane_y(Field.lanes_sides()[0]))
+        move_coordinates(first_traffic_lane_camera_x, get_traffic_lane_y(Field.lanes_sides()[0]), rotate = False)
 
         if state.lap == voltas:
             break
@@ -112,7 +112,7 @@ def obstacle_challenge():
             move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[1], True))
             rotate_angle(0)
 
-        move_coordinates(205, get_traffic_lane_y(Field.lanes_sides()[1]))
+        move_coordinates((State.parede_dentro/2) + (State.parede_fora/2) + 4, get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
 
 
     #Parking

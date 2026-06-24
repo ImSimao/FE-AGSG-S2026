@@ -1,7 +1,7 @@
 class State:
     """Static-style container for robot self."""
-    parede_fora = 300
-    parede_dentro = 100
+    parede_fora = 303
+    parede_dentro = 103
 
     def __init__(self):
         self.clockwise = 0

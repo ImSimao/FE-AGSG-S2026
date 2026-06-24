@@ -102,7 +102,7 @@ def rotate_angle(angle, reverse = False):
 
         time.sleep(1/100)
 
-def move_coordinates(dest_x, dest_y, reverse = False):
+def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
 
     desaccelerate_distance = 40
     max_speed = 60
@@ -110,10 +110,11 @@ def move_coordinates(dest_x, dest_y, reverse = False):
 
     x_initial, y_initial = state.get_relative_odom
 
-    if reverse:
-        rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
-    else:
-        rotate_coordinates(dest_x, dest_y)
+    if rotate:
+        if reverse:
+            rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
+        else:
+            rotate_coordinates(dest_x, dest_y)
 
 
     x_initial, y_initial = state.get_relative_odom
@@ -200,7 +201,7 @@ def target_in_right_rotation_area(xr, yr, theta, xt, yt, radius):
     xc, yc = circle_center_right(xr, yr, theta, radius)
     return is_inside_circle(xt, yt, xc, yc, radius)
 
-def target_in_rotation_area(xt, yt, radius=25):
+def target_in_rotation_area(xt, yt, radius=30):
     xr, yr = state.get_relative_odom
     theta = math.radians(state.compass_angle_relative)
 
