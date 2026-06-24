@@ -22,7 +22,7 @@ first_traffic_lane_camera_x = 150
 final_traffic_lane_x = state.parede_fora - traffic_lane_center - traffic_lane_y_offset
 parking_x_offset = 23
 parking_gap = 30
-parking_y = 30
+parking_y = 29
 
 
 def get_traffic_lane_y(traffic_side, rotate = False, reverse = False):
@@ -34,6 +34,7 @@ def get_traffic_lane_y(traffic_side, rotate = False, reverse = False):
 
 
 def obstacle_challenge():
+    global first_traffic_lane_camera_x
     time.sleep(1)
 
     if Distance.get_left() < Distance.get_right() and Distance.get_left() > 0 or Distance.get_right() <= 0:
@@ -60,10 +61,11 @@ def obstacle_challenge():
     else:
         rotate_angle(65*state.clockwise)
     
-    move_coordinates((State.parede_dentro/2) + (State.parede_fora/2) + 4, get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
+    rotate_angle(0)
+    move_coordinates((State.parede_dentro/2) + (State.parede_fora/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
     Field.exiting_park = False
     
-    voltas = 3
+    voltas = 2
 
     while state.lap <= voltas:
         state.current_lane += 1
@@ -91,8 +93,22 @@ def obstacle_challenge():
 
         elif Field.lanes_sides()[0] == 1:
             move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[0], True), rotate=False)
+
+        elif Field.lanes_sides()[0] == -1:
+            if state.get_relative_odom[0] > 50:
+                move_coordinates(state.get_relative_odom[0], 54, rotate=False)
+                rotate_angle(0, reverse=True)
+    
     
         rotate_angle(0)
+        
+        if state.lap == voltas:
+            if state.clockwise == 1:
+                first_traffic_lane_camera_x = 95
+
+            else:
+                first_traffic_lane_camera_x = 175
+
         move_coordinates(first_traffic_lane_camera_x, get_traffic_lane_y(Field.lanes_sides()[0]), rotate = False)
 
         if state.lap == voltas:
@@ -112,13 +128,10 @@ def obstacle_challenge():
             move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[1], True))
             rotate_angle(0)
 
-        move_coordinates((State.parede_dentro/2) + (State.parede_fora/2) + 4, get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
+        move_coordinates((State.parede_dentro/2) + (State.parede_fora/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
 
 
-    #Parking
-    if state.clockwise == -1 and Field.lanes_sides()[0] == -1:
-        move_coordinates(160, get_traffic_lane_y(Field.lanes_sides()[0]))
-
+    #parking 
     if Field.lanes_sides()[0] == -1:
         rotate_angle(-90 * state.clockwise)
         move_coordinates(state.get_relative_odom[0], parking_y)

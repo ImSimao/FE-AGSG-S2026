@@ -94,8 +94,8 @@ def _adjust_odometry():
     if state.clockwise == 0:
         return
 
-    #corrigir_corredor()
-    #corrigir_canto()
+    corrigir_corredor()
+    corrigir_canto()
 
 def corrigir_canto():
     curr_x, curr_y = state.get_relative_odom

@@ -9,8 +9,8 @@ from servo import Servo
 from test_pid import test_pid
 
 def main():
-    test_pid()
-    #obstacle_challenge()
+    #test_pid()
+    obstacle_challenge()
 
 
 if __name__ == "__main__":
