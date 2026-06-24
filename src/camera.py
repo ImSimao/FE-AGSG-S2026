@@ -79,15 +79,18 @@ class Camera:
                 print("Camera UART read error:", e)
 
         blobs = Camera._last_blobs.copy()
+
+        
+        possible_traffic_positions = get_traffic_lane_inside_pov()
  
         for cx, cy, color in blobs:
-            get_colour_position(cx, cy, color)
+            get_colour_position(cx, cy, color, possible_traffic_positions)
 
-        Camera._accumulate_pov_time()
+        Camera._accumulate_pov_time(possible_traffic_positions)
         return blobs
 
     @staticmethod
-    def _accumulate_pov_time():
+    def _accumulate_pov_time(possible_traffic_positions):
         now = time.ticks_ms()
 
         if state.clockwise == 0:
@@ -103,7 +106,7 @@ class Camera:
         if dt <= 0:
             return
 
-        for position in get_traffic_lane_inside_pov():
+        for position in possible_traffic_positions:
             Field.add_pov_time(position["pos"], position["side"], dt)
 
     @staticmethod
@@ -111,7 +114,7 @@ class Camera:
         return Camera.update()
 
 
-def get_colour_position(traffic_x, traffic_y, signal):
+def get_colour_position(traffic_x, traffic_y, signal, possible_traffic_positions):
     camera_width = 160
     camera_height = 120
     camera_center_x = camera_width / 2
@@ -130,8 +133,6 @@ def get_colour_position(traffic_x, traffic_y, signal):
 
     relative_angle = math.degrees(math.atan2(dy, dx))
     relative_angle = (relative_angle + 180) % 360 - 180
-
-    possible_traffic_positions = get_traffic_lane_inside_pov()
 
     for position in possible_traffic_positions:
         #if abs(position["angle"] - relative_angle) <= max_angle_difference:
