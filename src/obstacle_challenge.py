@@ -124,7 +124,7 @@ def obstacle_challenge():
         move_coordinates(state.get_relative_odom[0], parking_y)
     
     rotate_angle(0, reverse=True)
-    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, state.get_relative_odom[1])
+    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 190 - parking_gap + parking_x_offset, state.get_relative_odom[1])
     rotate_angle(90 * state.clockwise, reverse=True)
     rotate_angle(0, reverse=True)
         

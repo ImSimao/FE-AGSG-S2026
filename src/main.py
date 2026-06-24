@@ -6,10 +6,11 @@ from state import state
 from move_coordinates import rotate_angle
 import time
 from servo import Servo
+from test_pid import test_pid
 
 def main():
-
-    obstacle_challenge()
+    test_pid()
+    #obstacle_challenge()
 
 
 if __name__ == "__main__":

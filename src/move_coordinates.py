@@ -105,7 +105,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
 
     desaccelerate_distance = 40
-    max_speed = 55
+    max_speed = 60
     min_speed = 15
 
     x_initial, y_initial = state.get_relative_odom
@@ -138,7 +138,7 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
     ux_perp = -uy
     uy_perp = ux
 
-    pid_y = PIDController(kp=0.35, ki=0.0, kd=1.6)
+    pid_y = PIDController(kp=0.35, ki=0.003, kd=0.5)
     dt = 1/100
 
     while True:
