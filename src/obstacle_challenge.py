@@ -71,18 +71,21 @@ def obstacle_challenge():
     
         if not Field.can_enter_lane():
             #procurar cor
-            move_coordinates(50, 35)
-            #if state.get_relative_odom[0] > 50:
+            if state.is_lane_with_parking:
+                move_coordinates(50, 45)
+            else:
+                move_coordinates(50, 35)
+            
             rotate_angle(0, reverse=True)
                 
-            rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1])
+            rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1] if not state.is_lane_with_parking else 60)
             
             while not Field.can_enter_lane():
-                move_coordinates(state.get_relative_odom[0] + 10, 50)
+                move_coordinates(state.get_relative_odom[0] + 10, 50 if not state.is_lane_with_parking else 60)
                 if state.get_relative_odom[0] > 100:
                     break
             
-            move_coordinates(state.get_relative_odom[0] + 35, get_traffic_lane_y(Field.lanes_sides()[0]))
+            move_coordinates(state.get_relative_odom[0] + 35, get_traffic_lane_y(Field.lanes_sides()[0], True))
             
 
 
@@ -99,7 +102,8 @@ def obstacle_challenge():
         if not Field.can_exit_lane():
             rotate_coordinates(second_obstacle_camera_coord[0], second_obstacle_camera_coord[1])
 
-            if Field.lanes_sides()[0] == Field.lanes_sides()[1]:
+            sides = Field.lanes_sides()
+            if sides[0] == sides[1]:
                 rotate_angle(0, reverse=True)
         
         if Field.lanes_sides()[1] == -1 and state.get_relative_odom[1] < 50 or Field.lanes_sides()[1] == 1 and state.get_relative_odom[1] > 50:
@@ -107,8 +111,7 @@ def obstacle_challenge():
             move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[1], True))
             rotate_angle(0)
 
-
-        move_coordinates(200, get_traffic_lane_y(Field.lanes_sides()[1]))
+        move_coordinates(210, get_traffic_lane_y(Field.lanes_sides()[1], True))
 
 
     #Parking
