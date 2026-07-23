@@ -47,9 +47,11 @@ def obstacle_challenge():
     if state.clockwise == 1:
         state.set_relative_odom(100+1.75, distance_left)
         rotate_coordinates(200, 100)
+        time.sleep(1)
     else:
         state.set_relative_odom(200-distance_front, distance_right)
         rotate_coordinates(200, 60)
+        time.sleep(1)
 
     if not Field.parking_traffic_exit_confirmation():
         a=0
@@ -137,7 +139,7 @@ def obstacle_challenge():
         move_coordinates(state.get_relative_odom[0], parking_y)
     
     rotate_angle(0, reverse=True)
-    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 190 - parking_gap + parking_x_offset, state.get_relative_odom[1])
+    move_coordinates((110 + parking_x_offset) if state.clockwise == 1 else 190 - parking_gap + parking_x_offset, state.get_relative_odom[1])
     rotate_angle(90 * state.clockwise, reverse=True)
     rotate_angle(0, reverse=True)
         
