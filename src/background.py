@@ -115,16 +115,16 @@ def corrigir_canto():
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
 
-    if distance_front > 80 or distance_front <= 4:
+    if distance_front > 80 or distance_front <= 6:
         return
 
     if state.clockwise == 1:
-        if distance_left > 80 or distance_left <= 4:
+        if distance_left > 80 or distance_left <= 6:
             return
 
         state.set_relative_odom(distance_left + 2.55, distance_front)
     else:
-        if distance_right > 80 or distance_right <= 4:
+        if distance_right > 80 or distance_right <= 6:
             return
 
         state.set_relative_odom(distance_right + 2.55, distance_front)
@@ -154,7 +154,7 @@ def corrigir_corredor():
             
 
     if curr_y < 50 and state.clockwise == 1 or curr_y > 50 and state.clockwise == -1:
-        if distance_left > 50 or distance_left <= 4:
+        if distance_left > 50 or distance_left <= 6:
             return
 
         offset = distance_left + 2.55
@@ -162,7 +162,7 @@ def corrigir_corredor():
 
         state.set_relative_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
     else:
-        if distance_right > 50 or distance_right <= 4:
+        if distance_right > 50 or distance_right <= 6:
             return
 
         offset = distance_right + 2.55

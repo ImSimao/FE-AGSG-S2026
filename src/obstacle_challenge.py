@@ -11,7 +11,7 @@ from telemetry import Telemetry
 
 
 
-ninety_degrees_distance_offset = 18
+ninety_degrees_distance_offset = 20
 
 traffic_lane_center = (state.parede_fora - state.parede_dentro) / 4
 traffic_lane_y_offset = 30    #32
@@ -20,8 +20,8 @@ firt_obstacle_camera_coord = (100, traffic_lane_center)
 second_obstacle_camera_coord = (200, traffic_lane_center)
 first_traffic_lane_camera_x = 150
 final_traffic_lane_x = state.parede_fora - traffic_lane_center - traffic_lane_y_offset
-parking_x_offset = 23
-parking_gap = 30
+parking_x_offset = 20
+parking_gap = 45
 parking_y = 29
 
 
@@ -67,7 +67,7 @@ def obstacle_challenge():
     move_coordinates((State.parede_dentro/2) + (State.parede_fora/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
     Field.exiting_park = False
     
-    voltas = 2
+    voltas = 3
 
     while state.lap <= voltas:
         state.current_lane += 1
@@ -98,12 +98,15 @@ def obstacle_challenge():
 
         elif Field.lanes_sides()[0] == -1:
             if state.get_relative_odom[0] > 50:
-                move_coordinates(state.get_relative_odom[0], 54, rotate=False)
+                move_coordinates(state.get_relative_odom[0], 65, rotate=False)
                 rotate_angle(0, reverse=True)
     
     
         rotate_angle(0)
         
+        if state.lap == voltas:
+            break
+
         if state.lap == voltas:
             if state.clockwise == 1:
                 first_traffic_lane_camera_x = 95
@@ -113,13 +116,15 @@ def obstacle_challenge():
 
         move_coordinates(first_traffic_lane_camera_x, get_traffic_lane_y(Field.lanes_sides()[0]), rotate = False)
 
-        if state.lap == voltas:
-            break
-
-
         if not Field.can_exit_lane():
             rotate_coordinates(second_obstacle_camera_coord[0], second_obstacle_camera_coord[1])
-            time.sleep(1)
+            
+            start_time = time.ticks_ms()
+            while not Field.can_exit_lane():
+                time.sleep(0.1)
+
+                if time.ticks_ms() - start_time > 3000:
+                    break
 
             sides = Field.lanes_sides()
             if sides[0] == sides[1]:
@@ -135,14 +140,31 @@ def obstacle_challenge():
 
     #parking 
     if Field.lanes_sides()[0] == -1:
+        move_coordinates(105, state.get_relative_odom[1], rotate=False)
         rotate_angle(-90 * state.clockwise)
         move_coordinates(state.get_relative_odom[0], parking_y)
-    
-    rotate_angle(0, reverse=True)
-    move_coordinates((110 + parking_x_offset) if state.clockwise == 1 else 190 - parking_gap + parking_x_offset, state.get_relative_odom[1])
+        rotate_angle(0, reverse=True)
+    else: 
+        move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, 28, rotate = False)
+        rotate_angle(0, reverse=True)
+
+    move_coordinates(state.get_relative_odom[0] + 100, state.get_relative_odom[1], rotate = False, detect_parking_wall = True)
     rotate_angle(90 * state.clockwise, reverse=True)
+
+    time.sleep(0.5)
+    
+    while True:
+        diff_distance = Distance.get_rear() - 30
+
+        if abs(diff_distance) < 1:
+            state.target_speed = 0
+            break
+
+        if diff_distance > 0:
+            state.target_speed = -15
+        else:
+            state.target_speed = 15
+
+
+
     rotate_angle(0, reverse=True)
-        
-
-
-

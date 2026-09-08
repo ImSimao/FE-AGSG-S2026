@@ -30,7 +30,8 @@ class State:
         return (self.compass_angle + 
         (self.relative_lane * -90.0 * self.clockwise) + 360.0) % 360.0
 
-    def set_relative_odom (self, x_relative, y_relative):
+    def set_relative_odom (self, x_relative, y_relative, check_diff = False):
+
         if self.relative_lane == 0:
             if self.clockwise == -1:
                 self.odom_x = x_relative

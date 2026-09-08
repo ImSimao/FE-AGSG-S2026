@@ -113,6 +113,7 @@ class Lane:
 
 
     def lanes_sides(self):
+        #1 left side (green), -1 right side (red)
         zone_colors = [None, None, None]
         sides = [None, None]
 

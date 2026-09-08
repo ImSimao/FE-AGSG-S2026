@@ -1,4 +1,5 @@
 import time
+from distance import Distance
 from state import state
 from servo import Servo
 import math
@@ -102,11 +103,14 @@ def rotate_angle(angle, reverse = False):
 
         time.sleep(1/100)
 
-def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
+def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 40
     max_speed = 60
     min_speed = 15
+
+    if detect_parking_wall:
+        max_speed = 15
 
     x_initial, y_initial = state.get_relative_odom
 
@@ -115,6 +119,8 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
             rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
         else:
             rotate_coordinates(dest_x, dest_y)
+
+            
 
 
     x_initial, y_initial = state.get_relative_odom
@@ -171,7 +177,11 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True):
             state.target_speed = -state.target_speed
             servo_angle = -servo_angle
 
-
+        if detect_parking_wall:
+            if state.clockwise == 1 and (state.get_relative_odom[1] - Distance.get_left()) > 10  or state.clockwise == -1 and (state.get_relative_odom[1] - Distance.get_right()) > 10:
+                state.target_speed = 0
+                Servo.set_angle(0)
+                break
 
         Servo.set_angle(servo_angle*state.clockwise)
 
