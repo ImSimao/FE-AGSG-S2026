@@ -155,9 +155,9 @@ def obstacle_challenge():
 
             if Distance.get_left() < 30 and Distance.get_right() < 30:
                 if Distance.get_left() < Distance.get_right():
-                    rotate_angle(-15*state.clockwise, reverse=True)
+                    rotate_angle(-75 if state.clockwise == 1 else 115, reverse=True)
                 else:
-                    rotate_angle(15*state.clockwise, reverse=True)
+                    rotate_angle(-115 if state.clockwise == 1 else 75, reverse=True)
 
                 rotate_angle(-90 * state.clockwise, reverse=True)
                 time.sleep(1)
