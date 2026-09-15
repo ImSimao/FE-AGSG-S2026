@@ -57,29 +57,35 @@ class CruiseControl:
         # Apply acceleration/deceleration limits
         delta_pwm = desired_pwm - self.current_pwm
 
-        if delta_pwm > 0:
-            # Accelerating
-            max_delta = self.max_accel * dt
-            delta_pwm = min(delta_pwm, max_delta)
-        else:
-            # Decelerating
+       # ---- CORREÇÃO PRINCIPAL ----
+        # Se o erro aponta em sentido OPOSTO ao PWM atual,
+        # estamos a inverter a direção (ou a travar até inverter).
+        # Nesse caso usa max_decel, não max_accel.
+        reversing = (self.current_pwm * error) < 0
+
+        if reversing:
             max_delta = self.max_decel * dt
-            delta_pwm = max(delta_pwm, -max_delta)
+            delta_pwm = max(-max_delta, min(max_delta, delta_pwm))
+        elif delta_pwm > 0:
+            delta_pwm = min(delta_pwm, self.max_accel * dt)
+        else:
+            delta_pwm = max(delta_pwm, -self.max_decel * dt)
 
-        # Update PWM
         self.current_pwm += delta_pwm
-
-        # Final clamp (safety)
         self.current_pwm = max(self.min_pwm, min(self.max_pwm, self.current_pwm))
 
+        # ---- SAÍDA PARA O MOTOR ----
+        # Define a direção ANTES do duty
         if self.current_pwm > 0:
             Motor.frente()
-        elif self.current_pwm == 0:
-            Motor.parar()
-        else:
+        elif self.current_pwm < 0:
             Motor.tras()
+        else:
+            Motor.parar()
+            return self.current_pwm  # não mexer no duty depois de parar()
 
-        Motor.ena.duty_u16(int(abs(self.current_pwm) * 65535))
+        duty = int(min(65535, abs(self.current_pwm) * 65535))
+        Motor.ena.duty_u16(duty)
 
 
 cruiseControl = CruiseControl()

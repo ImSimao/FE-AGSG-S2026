@@ -140,13 +140,13 @@ def obstacle_challenge():
 
     #parking 
     if Field.lanes_sides()[0] == -1:
-        move_coordinates(105, state.get_relative_odom[1], rotate=False)
+        move_coordinates(105 if state.clockwise == 1 else 159, state.get_relative_odom[1], rotate=False)
         rotate_angle(-90 * state.clockwise)
         move_coordinates(state.get_relative_odom[0], parking_y)
         rotate_angle(0, reverse=True)
-    else: 
-        move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, 28, rotate = False)
-        rotate_angle(0, reverse=True)
+   
+    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, 28, rotate = False)
+    rotate_angle(0, reverse=True)
 
     move_coordinates(state.get_relative_odom[0] + 100, state.get_relative_odom[1], rotate = False, detect_parking_wall = True)
     rotate_angle(90 * state.clockwise, reverse=True)
