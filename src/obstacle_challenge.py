@@ -20,7 +20,7 @@ firt_obstacle_camera_coord = (100, traffic_lane_center)
 second_obstacle_camera_coord = (200, traffic_lane_center)
 first_traffic_lane_camera_x = 150
 final_traffic_lane_x = state.parede_fora - traffic_lane_center - traffic_lane_y_offset
-parking_x_offset = 20
+parking_x_offset = 5
 parking_gap = 45
 parking_y = 29
 
@@ -67,7 +67,7 @@ def obstacle_challenge():
     move_coordinates((State.parede_dentro/2) + (State.parede_fora/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
     Field.exiting_park = False
     
-    voltas = 3
+    voltas = 1
 
     while state.lap <= voltas:
         state.current_lane += 1
@@ -138,33 +138,49 @@ def obstacle_challenge():
         move_coordinates((State.parede_dentro/2) + (State.parede_fora/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
 
 
-    #parking 
-    if Field.lanes_sides()[0] == -1:
-        move_coordinates(105 if state.clockwise == 1 else 159, state.get_relative_odom[1], rotate=False)
-        rotate_angle(-90 * state.clockwise)
-        move_coordinates(state.get_relative_odom[0], parking_y)
-        rotate_angle(0, reverse=True)
-   
-    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, 28, rotate = False)
-    rotate_angle(0, reverse=True)
-
-    move_coordinates(state.get_relative_odom[0] + 100, state.get_relative_odom[1], rotate = False, detect_parking_wall = True)
-    rotate_angle(90 * state.clockwise, reverse=True)
-
-    time.sleep(0.5)
+    #parking      
+    move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, state.get_relative_odom[1], rotate = False)
     
+    rotate_angle(-90 * state.clockwise)
+    move_coordinates(state.get_relative_odom[0], parking_y, rotate=False)
+    rotate_angle(-90 * state.clockwise)
+
+    time.sleep(1)
+
     while True:
-        diff_distance = Distance.get_rear() - 30
+        diff_distance = Distance.get_front() - 18
 
         if abs(diff_distance) < 1:
             state.target_speed = 0
-            break
+
+            if Distance.get_left() < 30 and Distance.get_right() < 30:
+                if Distance.get_left() < Distance.get_right():
+                    rotate_angle(-15*state.clockwise, reverse=True)
+                else:
+                    rotate_angle(15*state.clockwise, reverse=True)
+
+                rotate_angle(-90 * state.clockwise, reverse=True)
+                time.sleep(1)
+            else:
+                break
 
         if diff_distance > 0:
-            state.target_speed = -15
+            state.target_speed = 10
         else:
-            state.target_speed = 15
+            state.target_speed = -10
+
+    time.sleep(1)
+
+    if Distance.get_left() < Distance.get_right():
+        rotate_angle(0 if state.clockwise == 1 else 180)
+    else:
+        rotate_angle(0 if state.clockwise == -1 else 180)
+
+
+        
+    
 
 
 
-    rotate_angle(0, reverse=True)
+
+

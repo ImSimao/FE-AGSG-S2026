@@ -45,7 +45,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
     while True:
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
 
-        if abs(angle_to_rotate) < 5:
+        if abs(angle_to_rotate) < 10:
             Servo.set_angle(0)
             state.target_speed = 0
             break
@@ -84,7 +84,7 @@ def rotate_angle(angle, reverse = False):
         else:  
             state.target_speed = 30
         
-        if abs(angle_to_rotate) < 5:
+        if abs(angle_to_rotate) < 10:
             Servo.set_angle(0)
             state.target_speed = 0
             break
