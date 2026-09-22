@@ -11,10 +11,10 @@ from telemetry import Telemetry
 
 
 
-ninety_degrees_distance_offset = 20
+ninety_degrees_distance_offset =18 # 16.5
 
 traffic_lane_center = (state.parede_fora - state.parede_dentro) / 4
-traffic_lane_y_offset = 30    #32
+traffic_lane_y_offset = 30 #26.25
 traffic_lane_y_parking = 11.5
 firt_obstacle_camera_coord = (100, traffic_lane_center)
 second_obstacle_camera_coord = (200, traffic_lane_center)
@@ -67,7 +67,7 @@ def obstacle_challenge():
     move_coordinates((State.parede_dentro/2) + (State.parede_fora/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
     Field.exiting_park = False
     
-    voltas = 1
+    voltas = 3
 
     while state.lap <= voltas:
         state.current_lane += 1
@@ -155,12 +155,11 @@ def obstacle_challenge():
 
             if Distance.get_left() < 30 and Distance.get_right() < 30:
                 if Distance.get_left() < Distance.get_right():
-                    rotate_angle(-75 if state.clockwise == 1 else 115, reverse=True)
+                    rotate_angle(-90 * state.clockwise + 20, reverse=True)
                 else:
-                    rotate_angle(-115 if state.clockwise == 1 else 75, reverse=True)
-
+                    rotate_angle(-90 * state.clockwise - 20, reverse=True)
                 rotate_angle(-90 * state.clockwise, reverse=True)
-                time.sleep(1)
+                time.sleep(0.5)
             else:
                 break
 
@@ -176,11 +175,18 @@ def obstacle_challenge():
     else:
         rotate_angle(0 if state.clockwise == -1 else 180)
 
+    rotate_angle(0 if abs(state.compass_angle_relative - 180) > 90 else 180, reverse=True)
 
+    while True:
+        diff_distance = Distance.get_rear() - 7.5
+
+        if abs(diff_distance) < 1:
+            state.target_speed = 0
+            break
+
+        if diff_distance > 0:
+            state.target_speed = -10
+        else:
+            state.target_speed = 10
         
-    
-
-
-
-
-
+    rotate_angle(0 if abs(state.compass_angle_relative - 180) > 90 else 180)

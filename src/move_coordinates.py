@@ -45,14 +45,20 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
     while True:
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
 
-        if abs(angle_to_rotate) < 10:
+        if abs(angle_to_rotate) < 2:
             Servo.set_angle(0)
             state.target_speed = 0
             break
 
-        state.target_speed = 15
-
         servo_angle = Servo._MAX_STEERING_OFFSET * state.clockwise
+
+        if abs(angle_to_rotate) < 15:
+            state.target_speed = 10
+            servo_angle = 0.6 * Servo._MAX_STEERING_OFFSET
+        elif abs(angle_to_rotate) < 25:
+            state.target_speed = 15
+        else:  
+            state.target_speed = 20
 
         if reverse:
             servo_angle = -servo_angle
@@ -80,11 +86,13 @@ def rotate_angle(angle, reverse = False):
 
         if abs(angle_to_rotate) < 15:
             state.target_speed = 10
-            servo_angle = 0.8*(Servo._MAX_STEERING_OFFSET)
+            servo_angle = 0.6 * Servo._MAX_STEERING_OFFSET
+        elif abs(angle_to_rotate) < 25:
+            state.target_speed = 15
         else:  
-            state.target_speed = 30
+            state.target_speed = 20
         
-        if abs(angle_to_rotate) < 10:
+        if abs(angle_to_rotate) < 2:
             Servo.set_angle(0)
             state.target_speed = 0
             break
