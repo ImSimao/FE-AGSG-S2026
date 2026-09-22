@@ -45,7 +45,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
     while True:
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
 
-        if abs(angle_to_rotate) < 2:
+        if abs(angle_to_rotate) < 8:
             Servo.set_angle(0)
             state.target_speed = 0
             break
@@ -53,7 +53,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
         servo_angle = Servo._MAX_STEERING_OFFSET * state.clockwise
 
         if abs(angle_to_rotate) < 15:
-            state.target_speed = 10
+            state.target_speed = 8
             servo_angle = 0.6 * Servo._MAX_STEERING_OFFSET
         elif abs(angle_to_rotate) < 25:
             state.target_speed = 15
@@ -110,9 +110,9 @@ def rotate_angle(angle, reverse = False):
 
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
-    desaccelerate_distance = 40
+    desaccelerate_distance = 30
     max_speed = 60
-    min_speed = 15
+    min_speed = 5
 
     if detect_parking_wall:
         max_speed = 15

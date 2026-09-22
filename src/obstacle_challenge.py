@@ -142,8 +142,10 @@ def obstacle_challenge():
     move_coordinates((100 + parking_x_offset) if state.clockwise == 1 else 200 - parking_gap + parking_x_offset, state.get_relative_odom[1], rotate = False)
     
     rotate_angle(-90 * state.clockwise)
-    move_coordinates(state.get_relative_odom[0], parking_y, rotate=False)
-    rotate_angle(-90 * state.clockwise)
+    
+    if state.get_relative_odom[1] > 50:
+        move_coordinates(state.get_relative_odom[0], parking_y, rotate=False)
+        rotate_angle(-90 * state.clockwise)
 
     time.sleep(1)
 
@@ -155,9 +157,9 @@ def obstacle_challenge():
 
             if Distance.get_left() < 30 and Distance.get_right() < 30:
                 if Distance.get_left() < Distance.get_right():
-                    rotate_angle(-90 * state.clockwise + 20, reverse=True)
+                    rotate_angle(-90 * state.clockwise + 25, reverse=True)
                 else:
-                    rotate_angle(-90 * state.clockwise - 20, reverse=True)
+                    rotate_angle(-90 * state.clockwise - 25, reverse=True)
                 rotate_angle(-90 * state.clockwise, reverse=True)
                 time.sleep(0.5)
             else:
@@ -190,3 +192,6 @@ def obstacle_challenge():
             state.target_speed = 10
         
     rotate_angle(0 if abs(state.compass_angle_relative - 180) > 90 else 180)
+
+    time.sleep(1)
+    Telemetry.log(state.compass_angle_relative)
