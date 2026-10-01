@@ -170,6 +170,8 @@ def obstacle_challenge():
         else:
             state.target_speed = -10
 
+        time.sleep(0.05)
+
     time.sleep(1)
 
     if Distance.get_left() < Distance.get_right():
@@ -190,6 +192,8 @@ def obstacle_challenge():
             state.target_speed = -10
         else:
             state.target_speed = 10
+
+        time.sleep(0.05)
         
     rotate_angle(0 if abs(state.compass_angle_relative - 180) > 90 else 180)
 
