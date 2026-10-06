@@ -135,9 +135,9 @@ def get_colour_position(traffic_x, traffic_y, signal, possible_traffic_positions
     relative_angle = (relative_angle + 180) % 360 - 180
 
     for position in possible_traffic_positions:
-        #if abs(position["angle"] - relative_angle) <= max_angle_difference:
-        Field.set_signal(position["pos"], position["side"], signal)
-        return
+        if abs(position["angle"] - relative_angle) <= max_angle_difference:
+            Field.set_signal(position["pos"], position["side"], signal)
+            return
 
 
 def get_traffic_lane_inside_pov():
@@ -158,8 +158,9 @@ def get_traffic_lane_inside_pov():
         traffic_coord.append([260, 100, 3, 1])
 
     x, y = state.get_relative_odom
-    x_camera = x + robot_distance_from_camera * math.sin(state.compass_angle_relative)
-    y_camera = y + robot_distance_from_camera * math.cos(state.compass_angle_relative)
+    angle = math.radians(state.compass_angle_relative)
+    x_camera = x + robot_distance_from_camera * math.sin(angle)
+    y_camera = y + robot_distance_from_camera * math.cos(angle)
 
     position_inside_pov = []
     
