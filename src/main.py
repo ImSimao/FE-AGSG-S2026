@@ -1,18 +1,22 @@
 import init
+import uasyncio as asyncio
 from obstacle_challenge import obstacle_challenge
-#from open_challenge import open_challenge
-from move_coordinates import move_coordinates
+from background import background_task
 from state import state
-from move_coordinates import rotate_angle
-import time
 from servo import Servo
-from test_pid import test_pid
+from motor import Motor
 
-def main():
-    #test_pid()
-    obstacle_challenge()
+
+async def main():
+    asyncio.create_task(background_task())
+    try:
+        await obstacle_challenge()
+    finally:
+        state.target_speed = 0
+        Motor.parar()
+        Motor.ena.duty_u16(0)
+        Servo.set_angle(0)
 
 
 if __name__ == "__main__":
-    main()
-
+    asyncio.run(main())

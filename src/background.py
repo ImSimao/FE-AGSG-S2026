@@ -1,6 +1,7 @@
 from distance import Distance
 from camera import Camera
 import time
+import uasyncio as asyncio
 import math
 from compass import Compass
 from encoder import Encoder
@@ -9,12 +10,12 @@ from state import state
 from telemetry import Telemetry
 
 
-SENSOR_INTERVAL_MS    = 1/5  * 1000  # 50 Hz
-CAMERA_INTERVAL_MS    = 1/200 * 1000  # 200 Hz
-ODOM_INTERVAL_MS      = 1/100 * 1000  # 100 Hz
-SPEED_INTERVAL_MS     = 1/10  * 1000  # 10 Hz
-TELEMETRY_INTERVAL_MS = 1/20  * 1000  # 10 Hz
-ADJUST_ODOM_INTERVAL_MS = 1/5  * 1000  # 1 Hz
+SENSOR_INTERVAL_MS    = 1/50 * 1000   # 50 Hz (20 ms)
+CAMERA_INTERVAL_MS    = 1/200 * 1000  # 200 Hz (5 ms)
+ODOM_INTERVAL_MS      = 1/100 * 1000  # 100 Hz (10 ms)
+SPEED_INTERVAL_MS     = 1/10  * 1000  # 10 Hz (100 ms)
+TELEMETRY_INTERVAL_MS = 1/20  * 1000  # 20 Hz (50 ms)
+ADJUST_ODOM_INTERVAL_MS = 1/5  * 1000  # 5 Hz (200 ms)
 LOOP_SLEEP_MS = 1
 
 
@@ -252,7 +253,7 @@ def _send_telemetry():
     Telemetry.send()
 
 
-def background_task():
+async def background_task():
     last_distance_cm = Encoder.distance_cm()
     last_speed_cm = last_distance_cm
     last_sensor_ms = time.ticks_ms()
@@ -295,5 +296,5 @@ def background_task():
             _adjust_odometry()
             last_adjust_odom_ms = now_ms
 
-        time.sleep_ms(LOOP_SLEEP_MS)
+        await asyncio.sleep_ms(LOOP_SLEEP_MS)
         

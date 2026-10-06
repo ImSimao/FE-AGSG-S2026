@@ -1,4 +1,5 @@
 import time
+import uasyncio as asyncio
 from distance import Distance
 from state import state
 from servo import Servo
@@ -6,6 +7,10 @@ import math
 from pid import PIDController
 from telemetry import Telemetry
 from math import sin, cos
+
+
+ROTATE_TIMEOUT_MS = 5000
+MOVE_TIMEOUT_MS = 20000
 
 
 def get_angle_to_rotate(dest_x, dest_y):
@@ -37,12 +42,18 @@ def get_angle_to_rotate(dest_x, dest_y):
 
     return angle_to_rotate
 
-def rotate_coordinates(dest_x, dest_y, reverse = False):
+async def rotate_coordinates(dest_x, dest_y, reverse = False):
     if target_in_rotation_area(dest_x, dest_y):
         reverse = not reverse
         #return
 
+    start_ms = time.ticks_ms()
     while True:
+        if time.ticks_diff(time.ticks_ms(), start_ms) > ROTATE_TIMEOUT_MS:
+            Servo.set_angle(0)
+            state.target_speed = 0
+            break
+
         angle_to_rotate = get_angle_to_rotate(dest_x, dest_y)
 
         if abs(angle_to_rotate) < 8:
@@ -69,11 +80,17 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
         else:
             Servo.set_angle(-servo_angle)
 
-        time.sleep(1/100)
+        await asyncio.sleep_ms(10)
 
 
-def rotate_angle(angle, reverse = False):
+async def rotate_angle(angle, reverse = False):
+    start_ms = time.ticks_ms()
     while True:
+        if time.ticks_diff(time.ticks_ms(), start_ms) > ROTATE_TIMEOUT_MS:
+            Servo.set_angle(0)
+            state.target_speed = 0
+            break
+
         angle_to_rotate = angle - state.compass_angle_relative
 
         if angle_to_rotate > 180:
@@ -106,9 +123,9 @@ def rotate_angle(angle, reverse = False):
         else:
             Servo.set_angle(-servo_angle)
 
-        time.sleep(1/100)
+        await asyncio.sleep_ms(10)
 
-def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
+async def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 30
     max_speed = 60
@@ -121,9 +138,9 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
     if rotate:
         if reverse:
-            rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
+            await rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
         else:
-            rotate_coordinates(dest_x, dest_y)
+            await rotate_coordinates(dest_x, dest_y)
 
             
 
@@ -141,6 +158,9 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
     # Comprimento de AB
     L = math.sqrt(ABx*ABx + ABy*ABy)
 
+    if L < 1e-6:
+        return
+
     # Vetor unitário na direção AB (eixo x')
     ux = ABx / L
     uy = ABy / L
@@ -150,9 +170,20 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
     uy_perp = ux
 
     pid_y = PIDController(kp=0.35, ki=0.003, kd=0.5)
-    dt = 1/100
+    move_start_ms = time.ticks_ms()
+    last_loop_ms = move_start_ms
 
     while True:
+        now_ms = time.ticks_ms()
+        dt = time.ticks_diff(now_ms, last_loop_ms) / 1000.0
+        last_loop_ms = now_ms
+
+        if time.ticks_diff(now_ms, move_start_ms) > MOVE_TIMEOUT_MS:
+            state.target_speed = 0
+            pid_y.reset()
+            Servo.set_angle(0)
+            break
+
         C = state.get_relative_odom
 
         # Vetor AC
@@ -190,7 +221,7 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
         Servo.set_angle(servo_angle*state.clockwise)
 
-        time.sleep(dt)
+        await asyncio.sleep_ms(10)
 
 
 def circle_center_left(xr, yr, theta, radius):
