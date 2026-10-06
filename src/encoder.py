@@ -1,4 +1,5 @@
 from machine import Pin
+import time
 import math
 
 
@@ -6,17 +7,23 @@ import math
 PPR = 200               # pulsos por volta do encoder
 RELACAO = 3 / 5         # relação engrenagens
 DIAMETRO_RODA = 3.2     # centimetros
+DEBOUNCE_US = 50        # ignora bordas mais próximas que isto (bounce/ruído)
 
 # Pinos (estáticos)
 _encoder_a = Pin(7, Pin.IN, Pin.PULL_UP)
 _encoder_b = Pin(6, Pin.IN, Pin.PULL_UP)
 
-# Estado — global de módulo para acesso rápido dentro do IRQ
+# Estado — globais de módulo para acesso rápido dentro do IRQ
 _contador = 0
+_last_edge_us = 0
 
 
 def _irq(pin):
-    global _contador
+    global _contador, _last_edge_us
+    now = time.ticks_us()
+    if time.ticks_diff(now, _last_edge_us) < DEBOUNCE_US:
+        return  # bounce/ruído, ignora
+    _last_edge_us = now
     # Na borda de subida do canal A, o nível de B indica o sentido.
     if _encoder_b.value():
         _contador -= 1   # Trás
