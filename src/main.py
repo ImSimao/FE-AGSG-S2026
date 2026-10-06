@@ -1,14 +1,14 @@
 import init
 import uasyncio as asyncio
 from obstacle_challenge import obstacle_challenge
-from background import background_task
+from background import start_background_tasks
 from state import state
 from servo import Servo
 from motor import Motor
 
 
 async def main():
-    asyncio.create_task(background_task())
+    start_background_tasks()
     try:
         await obstacle_challenge()
     finally:
