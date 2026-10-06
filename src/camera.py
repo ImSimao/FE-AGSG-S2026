@@ -24,6 +24,7 @@ class Camera:
     _rx_buffer = b""
     _last_blobs = []
     _last_pov_ms = None
+    _last_pov_positions = []
 
     @staticmethod
     def initialize(uart_id=1, baudrate=115200, rx_pin=9):
@@ -58,6 +59,7 @@ class Camera:
 
     @staticmethod
     def update():
+        new_frame = False
         uart = Camera._uart
         if uart is not None:
             try:
@@ -75,19 +77,20 @@ class Camera:
                             blobs = Camera._parse_line(line)
                             if blobs is not None:
                                 Camera._last_blobs = blobs
+                                new_frame = True
             except Exception as e:
                 print("Camera UART read error:", e)
 
-        blobs = Camera._last_blobs.copy()
+        if new_frame:
+            Camera._last_pov_positions = get_traffic_lane_inside_pov()
+            for cx, cy, color in Camera._last_blobs:
+                get_colour_position(cx, cy, color, Camera._last_pov_positions)
 
         
-        possible_traffic_positions = get_traffic_lane_inside_pov()
  
-        for cx, cy, color in blobs:
-            get_colour_position(cx, cy, color, possible_traffic_positions)
 
-        Camera._accumulate_pov_time(possible_traffic_positions)
-        return blobs
+        Camera._accumulate_pov_time(Camera._last_pov_positions)
+        return Camera._last_blobs.copy()
 
     @staticmethod
     def _accumulate_pov_time(possible_traffic_positions):
@@ -135,9 +138,9 @@ def get_colour_position(traffic_x, traffic_y, signal, possible_traffic_positions
     relative_angle = (relative_angle + 180) % 360 - 180
 
     for position in possible_traffic_positions:
-        if abs(position["angle"] - relative_angle) <= max_angle_difference:
-            Field.set_signal(position["pos"], position["side"], signal)
-            return
+        #if abs(position["angle"] - relative_angle) <= max_angle_difference:
+        Field.set_signal(position["pos"], position["side"], signal)
+        return
 
 
 def get_traffic_lane_inside_pov():
