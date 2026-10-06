@@ -1,5 +1,4 @@
 import time
-import uasyncio as asyncio
 from distance import Distance
 from state import state
 from servo import Servo
@@ -42,7 +41,7 @@ def get_angle_to_rotate(dest_x, dest_y):
 
     return angle_to_rotate
 
-async def rotate_coordinates(dest_x, dest_y, reverse = False):
+def rotate_coordinates(dest_x, dest_y, reverse = False):
     if target_in_rotation_area(dest_x, dest_y):
         reverse = not reverse
         #return
@@ -80,10 +79,10 @@ async def rotate_coordinates(dest_x, dest_y, reverse = False):
         else:
             Servo.set_angle(-servo_angle)
 
-        await asyncio.sleep_ms(10)
+        time.sleep(1/100)
 
 
-async def rotate_angle(angle, reverse = False):
+def rotate_angle(angle, reverse = False):
     start_ms = time.ticks_ms()
     while True:
         if time.ticks_diff(time.ticks_ms(), start_ms) > ROTATE_TIMEOUT_MS:
@@ -123,9 +122,9 @@ async def rotate_angle(angle, reverse = False):
         else:
             Servo.set_angle(-servo_angle)
 
-        await asyncio.sleep_ms(10)
+        time.sleep(1/100)
 
-async def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
+def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 30
     max_speed = 60
@@ -138,9 +137,9 @@ async def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detec
 
     if rotate:
         if reverse:
-            await rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
+            rotate_coordinates(x_initial- (dest_x - x_initial), y_initial- (dest_y - y_initial))
         else:
-            await rotate_coordinates(dest_x, dest_y)
+            rotate_coordinates(dest_x, dest_y)
 
             
 
@@ -221,7 +220,7 @@ async def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detec
 
         Servo.set_angle(servo_angle*state.clockwise)
 
-        await asyncio.sleep_ms(10)
+        time.sleep(1/100)
 
 
 def circle_center_left(xr, yr, theta, radius):

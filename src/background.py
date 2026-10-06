@@ -1,7 +1,6 @@
 from distance import Distance
 from camera import Camera
 import time
-import uasyncio as asyncio
 import math
 from compass import Compass
 from encoder import Encoder
@@ -16,6 +15,7 @@ ODOM_INTERVAL_MS      = 10    # 100 Hz
 SPEED_INTERVAL_MS     = 100   # 10 Hz
 TELEMETRY_INTERVAL_MS = 50    # 20 Hz
 ADJUST_ODOM_INTERVAL_MS = 200 # 5 Hz
+LOOP_SLEEP_MS = 1
 
 
 
@@ -252,57 +252,48 @@ def _send_telemetry():
     Telemetry.send()
 
 
-async def sensor_task():
-    while True:
-        _read_distance_sensors()
-        await asyncio.sleep_ms(SENSOR_INTERVAL_MS)
-
-
-async def camera_task():
-    while True:
-        _read_camera()
-        await asyncio.sleep_ms(CAMERA_INTERVAL_MS)
-
-
-async def odometry_task():
+def background_task():
     last_distance_cm = Encoder.distance_cm()
+    last_speed_cm = last_distance_cm
+    last_sensor_ms = time.ticks_ms()
+    last_camera_ms = last_sensor_ms
+    last_odom_ms = last_sensor_ms
+    last_speed_ms = last_sensor_ms
+    last_telemetry_ms = last_sensor_ms
+    last_adjust_odom_ms = last_sensor_ms
+
+    print("Background task started")
+
     while True:
-        last_distance_cm = _update_odometry(last_distance_cm)
-        await asyncio.sleep_ms(ODOM_INTERVAL_MS)
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_sensor_ms) >= SENSOR_INTERVAL_MS:
+            _read_distance_sensors()
+            last_sensor_ms = now_ms
 
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_camera_ms) >= CAMERA_INTERVAL_MS:
+            _read_camera()
+            last_camera_ms = now_ms
 
-async def speed_task():
-    last_distance_cm = Encoder.distance_cm()
-    last_speed_ms = time.ticks_ms()
-    while True:
-        last_distance_cm = update_speed(last_distance_cm, last_speed_ms)
-        last_speed_ms = time.ticks_ms()
-        await asyncio.sleep_ms(SPEED_INTERVAL_MS)
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_odom_ms) >= ODOM_INTERVAL_MS:
+            last_distance_cm = _update_odometry(last_distance_cm)
+            last_odom_ms = now_ms
 
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_speed_ms) >= SPEED_INTERVAL_MS:
+            last_speed_cm = update_speed(last_speed_cm, last_speed_ms)
+            last_speed_ms = now_ms
 
-async def telemetry_task():
-    while True:
-        _send_telemetry()
-        await asyncio.sleep_ms(TELEMETRY_INTERVAL_MS)
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_telemetry_ms) >= TELEMETRY_INTERVAL_MS:
+            _send_telemetry()
+            last_telemetry_ms = now_ms
 
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_adjust_odom_ms) >= ADJUST_ODOM_INTERVAL_MS:
+            _adjust_odometry()
+            last_adjust_odom_ms = now_ms
 
-async def adjust_odometry_task():
-    while True:
-        _adjust_odometry()
-        await asyncio.sleep_ms(ADJUST_ODOM_INTERVAL_MS)
-
-
-def start_background_tasks():
-    """Create one independent asyncio task per background activity."""
-    tasks = (
-        sensor_task(),
-        camera_task(),
-        odometry_task(),
-        speed_task(),
-        telemetry_task(),
-        adjust_odometry_task(),
-    )
-    for t in tasks:
-        asyncio.create_task(t)
-    print("Background tasks started")
+        time.sleep_ms(LOOP_SLEEP_MS)
         
