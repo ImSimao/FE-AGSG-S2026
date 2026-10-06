@@ -10,7 +10,7 @@ from telemetry import Telemetry
 
 
 SENSOR_INTERVAL_MS    = 20    # 50 Hz
-CAMERA_INTERVAL_MS    = 5     # 200 Hz
+CAMERA_INTERVAL_MS    = 20    # 50 Hz (matches the ~30-60 FPS camera frame rate)
 ODOM_INTERVAL_MS      = 10    # 100 Hz
 SPEED_INTERVAL_MS     = 100   # 10 Hz
 TELEMETRY_INTERVAL_MS = 50    # 20 Hz
