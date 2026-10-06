@@ -8,8 +8,8 @@ from telemetry import Telemetry
 from math import sin, cos
 
 
-ROTATE_TIMEOUT_MS = 5000
-MOVE_TIMEOUT_MS = 20000
+ROTATE_TIMEOUT_MS = 8 * 1000
+MOVE_TIMEOUT_MS = 60 * 1000
 
 
 def get_angle_to_rotate(dest_x, dest_y):
@@ -127,7 +127,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 30
-    max_speed = 60
+    max_speed = 45   # abaixo do limite do motor (~50 cm/s a 500 RPM) para não saturar/derrapar
     min_speed = 5
 
     if detect_parking_wall:
