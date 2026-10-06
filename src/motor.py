@@ -6,7 +6,7 @@ class Motor:
     in1 = Pin(2, Pin.OUT)
     in2 = Pin(1, Pin.OUT)
     ena = PWM(Pin(0))
-    ena.freq(1000)
+    ena.freq(20000)  # 20 kHz: ruído de comutação acima da banda do encoder (mais fácil de filtrar)
 
     @staticmethod
     def frente():
