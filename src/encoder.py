@@ -7,7 +7,7 @@ import math
 PPR = 200               # pulsos por volta do encoder
 RELACAO = 3 / 5         # relação engrenagens
 DIAMETRO_RODA = 3.2     # centimetros
-DEBOUNCE_US = 50        # ignora bordas mais próximas que isto (bounce/ruído)
+DEBOUNCE_US = 200       # ignora bordas mais próximas que isto (bounce/ruído); 200 µs << 600 µs (período a 500 RPM)
 
 # Pinos (estáticos)
 _encoder_a = Pin(7, Pin.IN, Pin.PULL_UP)
