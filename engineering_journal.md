@@ -1,7 +1,7 @@
 # AGSG — Engineering Journal
 ## WRO Future Engineers 2026 — Self-Driving Car
 
-**Team:** AGSG (Portugal) — Joana Silva, Simão Freira
+**Team:** AGSG (Portugal) — Joana Silva, Simão Freire
 **Coach:** Tiago Severino
 
 ---
