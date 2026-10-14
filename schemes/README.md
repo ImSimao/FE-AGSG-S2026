@@ -1,4 +1,9 @@
 Electromechanical diagrams
 ====
 
-This directory must contain one or several schematic diagrams in form of JPEG, PNG or PDF of the electromechanical components illustrating all the elements (electronic components and motors) used in the vehicle and how they connect to each other.
+This directory contains the schematic diagrams of the vehicle's electromechanical components.
+
+## Files
+
+- `communication_diagram.png` — data and communication links between the controllers, sensors and actuators (UART, I2C, PWM, GPIO).
+- `power_diagram.png` — power distribution (battery, regulators, motor, servo, controllers and sensors).
