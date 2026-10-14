@@ -74,6 +74,13 @@ class CruiseControl:
         self.current_pwm += delta_pwm
         self.current_pwm = max(self.min_pwm, min(self.max_pwm, self.current_pwm))
 
+        # Não inverter a direção durante condução normal: com alvo >= 0 o PWM
+        # não passa a negativo (senão o motor "anda para trás" a corrigir overshoot).
+        if state.target_speed >= 0 and self.current_pwm < 0:
+            self.current_pwm = 0.0
+        elif state.target_speed < 0 and self.current_pwm > 0:
+            self.current_pwm = 0.0
+
         # ---- SAÍDA PARA O MOTOR ----
         # Define a direção ANTES do duty
         if self.current_pwm > 0:
