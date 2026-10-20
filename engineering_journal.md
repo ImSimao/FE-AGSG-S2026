@@ -72,7 +72,7 @@ The drivetrain is built from:
 
 ### 2.3 Steering
 
-The front wheels use **Ackermann steering geometry**, driven by a single **Savox SH-0255 MG servo**. Ackermann geometry makes the inner wheel turn more sharply than the outer wheel in a corner, so the wheels roll without slipping — this is important because our odometry assumes the wheels do not slip.
+The front wheels use **Ackermann steering geometry**, driven by a single **Savox SH-0255 MG servo**. We chose this servo for its metal gears and low play (backlash): a micro 9g SG90 servo (both plastic and metal-gear versions) broke under load, while the Savox has held up reliably. Ackermann geometry makes the inner wheel turn more sharply than the outer wheel in a corner, so the wheels roll without slipping — this is important because our odometry assumes the wheels do not slip.
 
 ### 2.4 Motor selection and speed reasoning
 
@@ -315,6 +315,9 @@ Last year we used a Raspberry Pi Zero with a Pi Camera, but its Linux boot time 
 
 **9. Distance sensing — ultrasonic vs LiDAR/IR**
 We chose **ultrasonic (SRF04)** over LiDAR or IR distance sensors because we cannot know the reflectivity and colour of the competition walls in advance — LiDAR and IR depend on those surface properties, so their readings can vary with the wall. Ultrasonic is less accurate, but its measurements are more **consistent across different wall conditions**, which matters more for reliable driving.
+
+**10. Steering servo — SG90 → Savox SH-0255 MG**
+We first used a micro 9g SG90 servo, but its gears broke — both the plastic-gear and the metal-gear versions. We switched to the **Savox SH-0255 MG**, which has metal gears and less play, and it has worked reliably so far.
 
 ### 5.3 Iteration history
 
