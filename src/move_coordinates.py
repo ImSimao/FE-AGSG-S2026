@@ -15,7 +15,7 @@ MOVE_TIMEOUT_MS = 60 * 1000
 def get_angle_to_rotate(dest_x, dest_y):
     x_initial, y_initial = state.get_relative_odom
 
-    # Coordenadas absolutas
+    # Absolute coordinates
     A = (x_initial, y_initial)
     B = (dest_x, dest_y)
 
@@ -127,7 +127,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 30
-    max_speed = 45   # abaixo do limite do motor (~50 cm/s a 500 RPM) para não saturar/derrapar
+    max_speed = 60   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
     min_speed = 5
 
     if detect_parking_wall:
@@ -146,25 +146,25 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
     x_initial, y_initial = state.get_relative_odom
 
-    # Coordenadas absolutas
+    # Absolute coordinates
     A = (x_initial, y_initial)
     B = (dest_x, dest_y)
 
-    # Vetor AB
+    # Vector AB
     ABx = B[0] - A[0]
     ABy = B[1] - A[1]
 
-    # Comprimento de AB
+    # Length of AB
     L = math.sqrt(ABx*ABx + ABy*ABy)
 
     if L < 1e-6:
         return
 
-    # Vetor unitário na direção AB (eixo x')
+    # Unit vector in the AB direction (x' axis)
     ux = ABx / L
     uy = ABy / L
 
-    # Vetor perpendicular (eixo y')
+    # Perpendicular vector (y' axis)
     ux_perp = -uy
     uy_perp = ux
 
@@ -185,14 +185,16 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
         C = state.get_relative_odom
 
-        # Vetor AC
+        # Vector AC
         ACx = C[0] - A[0]
         ACy = C[1] - A[1]
 
-        # Coordenadas no sistema rotacionado
+        # Coordinates in the rotated frame
         x_prime = ACx*ux + ACy*uy
         y_prime = ACx*ux_perp + ACy*uy_perp
         remaining_distance = L - x_prime
+
+        print(remaining_distance)
 
         
         if remaining_distance < 0:

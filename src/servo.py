@@ -5,8 +5,8 @@ class Servo:
     _servo = PWM(Pin(3))
     _servo.freq(50)  # 50Hz
 
-    _MIN_DUTY = 1638   # ~0.5ms em 50Hz
-    _MAX_DUTY = 8192   # ~2.5ms em
+    _MIN_DUTY = 1638   # ~0.5ms at 50Hz
+    _MAX_DUTY = 8192   # ~2.5ms at 50Hz
 
     _CENTER_STEERING = 96.5
     _MAX_STEERING_OFFSET = 29

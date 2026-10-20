@@ -6,7 +6,7 @@
 #      -> if drift grows over time, the gyro (game rotation vector) is drifting.
 #   2) ENCODER TEST: push the robot exactly 100 cm.
 #      -> 'd_enc' should read ~100 cm. A constant % error means wrong scale
-#         (PPR / RELACAO / DIAMETRO_RODA); jumps mean missed counts.
+#         (PPR / RATIO / WHEEL_DIAMETER); jumps mean missed counts.
 #
 # How to run: rename this file to main.py, or in the REPL run: import debug_odom
 

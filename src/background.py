@@ -57,10 +57,10 @@ class CruiseControl:
         # Apply acceleration/deceleration limits
         delta_pwm = desired_pwm - self.current_pwm
 
-       # ---- CORREÇÃO PRINCIPAL ----
-        # Se o erro aponta em sentido OPOSTO ao PWM atual,
-        # estamos a inverter a direção (ou a travar até inverter).
-        # Nesse caso usa max_decel, não max_accel.
+       # ---- MAIN FIX ----
+        # If the error points in the OPPOSITE direction to the current PWM,
+        # we are reversing direction (or braking until it reverses).
+        # In that case use max_decel, not max_accel.
         reversing = (self.current_pwm * error) < 0
 
         if reversing:
@@ -74,22 +74,22 @@ class CruiseControl:
         self.current_pwm += delta_pwm
         self.current_pwm = max(self.min_pwm, min(self.max_pwm, self.current_pwm))
 
-        # Não inverter a direção durante condução normal: com alvo >= 0 o PWM
-        # não passa a negativo (senão o motor "anda para trás" a corrigir overshoot).
+        # Do not reverse direction during normal driving: with target >= 0 the PWM
+        # must not go negative (otherwise the motor reverses to correct overshoot).
         if state.target_speed >= 0 and self.current_pwm < 0:
             self.current_pwm = 0.0
         elif state.target_speed < 0 and self.current_pwm > 0:
             self.current_pwm = 0.0
 
-        # ---- SAÍDA PARA O MOTOR ----
-        # Define a direção ANTES do duty
+        # ---- MOTOR OUTPUT ----
+        # Set the direction BEFORE the duty
         if self.current_pwm > 0:
-            Motor.frente()
+            Motor.forward()
         elif self.current_pwm < 0:
-            Motor.tras()
+            Motor.backward()
         else:
-            Motor.parar()
-            return self.current_pwm  # não mexer no duty depois de parar()
+            Motor.stop()
+            return self.current_pwm  # do not change the duty after stop()
 
         duty = int(min(65535, abs(self.current_pwm) * 65535))
         Motor.ena.duty_u16(duty)
@@ -107,10 +107,10 @@ def _adjust_odometry():
     if state.clockwise == 0:
         return
 
-    corrigir_corredor()
-    corrigir_canto()
+    correct_corridor()
+    correct_corner()
 
-def corrigir_canto():
+def correct_corner():
     curr_x, curr_y = state.get_relative_odom
 
     if curr_x > 90:
@@ -143,7 +143,7 @@ def corrigir_canto():
         state.set_relative_odom(distance_right + 2.55, distance_front)
 
 
-def corrigir_corredor():
+def correct_corridor():
     curr_x, curr_y = state.get_relative_odom
 
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
