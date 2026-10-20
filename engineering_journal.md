@@ -214,12 +214,14 @@ The state machine sets a target speed and a target heading; the low-level contro
 
 **Lane following (the 3-lap loop):**
 
-Each lap drives the robot around one side of the field. Inside a lap the sequence is:
+The field has four corridors (sections), and one lap = four sections. Inside each section the sequence is:
 
-1. **Detect the entry traffic sign** — the robot first locates the sign at the entrance of the corridor so that it enters the corridor on the correct side.
-2. **Enter and follow the corridor**.
-3. **Mid-corridor: detect the exit traffic sign** — in the middle of the corridor the robot looks for the exit sign and decides whether to switch side (from right to left, or vice-versa) or to continue straight to the end of the corridor.
-4. **Exit the corridor**.
+1. **Enter the corridor** — the robot first detects the entry traffic sign so that it enters on the correct side.
+2. **Follow the corridor**.
+3. **13th section?** — after 12 sections (3 laps), the robot exits to parking instead of continuing.
+4. **Mid-corridor: detect the exit traffic sign** — the robot looks for the exit sign and decides whether to switch side (left ↔ right) or to continue straight.
+5. **Exit the corridor**.
+6. **Corner** — turn 90° into the next section.
 
 The traffic sign is an obstacle pillar: the robot **adjusts its trajectory** according to the sign's colour — a **green** pillar is passed on the **left**, a **red** pillar on the **right**.
 
