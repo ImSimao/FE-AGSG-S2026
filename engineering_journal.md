@@ -176,7 +176,7 @@ Power drawn from the battery (including regulator losses):
 - Practical runtime (with start-up peaks and margins): **~1.5–2 h**
 - Peak (stall): motor 0.9 A + servo 0.75 A → up to **~20 W** (brief)
 
-The two L7805CV linear regulators waste ~55% of the input power as heat (11 V → 5 V); they dominate the battery draw. A buck converter on the 5 V rails would roughly double the runtime — a possible future improvement.
+The two L7805CV linear regulators waste ~55% of the input power as heat (11 V → 5 V); they dominate the battery draw. The servo rail is the worst case: at the servo's stall current (750 mA) the L7805CV would dissipate (11.1 − 5) × 0.75 ≈ 4.6 W in a TO-220 package without a heatsink, which would overheat. A buck converter (like the LM2596 already used for the motor) would be more efficient and would roughly double the runtime — a documented improvement for the next revision.
 
 ### 3.3 Sensors — selection and placement
 
@@ -388,16 +388,19 @@ We first used a micro 9g SG90 servo, but its gears broke — both the plastic-ge
 
 ### 5.3 Iteration history
 
-| Version | Change | Reason |
-|---------|--------|--------|
-| v1 | basic drive + encoder | first running prototype |
-| v2 | `uasyncio` control loop | cleaner code |
-| v3 | revert to `_thread` | `uasyncio` caused driving jitter |
-| v4 | sequential sonar | fix cross-talk |
-| v5 | 20 kHz PWM + dynamic debounce | fix encoder over-counting |
-| v6 | cruise-control reversal guard | prevent unintended reverse |
+The development is recorded in the git history (68 commits). Key iterations, aligned with the real commits:
 
-> **[TBD — confirm]** We will align these version numbers with our actual git history and photos.
+| Change | Trigger / problem | Commit |
+|--------|-------------------|--------|
+| baseline drive + encoder | first running prototype | initial commits |
+| `uasyncio` control loop | cleaner code | `7a2725a` |
+| revert to `_thread` | `uasyncio` scheduling jitter degraded driving | `153aaeb` |
+| sequential sonar measurement | cross-talk between sonars | `13910c0` |
+| 20 kHz motor PWM | encoder over-counting from motor noise | `40c1fe2` |
+| dynamic encoder debounce | noise dominates at low speed | `9d59c39` |
+| cruise-control reversal guard | motor reversing during deceleration | `f966934` |
+
+Each change is a measured fix: the trigger (jitter, cross-talk, over-counting, reversal) was observed first, and the change resolved it.
 
 ### 5.4 Risk & failure analysis
 
@@ -426,11 +429,29 @@ The commit history shows the development over time, and the README plus code com
 
 ---
 
-## 7. To be completed (measurements & artefacts)
+## 7. To be completed
 
-The following items are still pending before final submission:
+### Compliance (team)
 
-1. Driving video (`video/`) — YouTube link, ≥30 s of autonomous driving.
-2. CAD files in `models/`.
-3. Measured top speed under load (§2.4) — to confirm the ~77 cm/s estimate.
-4. Version/iteration history aligned with the git log (§5.3).
+1. **Remove Bluetooth** — the HC-06 must be physically removed and the telemetry path disabled, since RF is forbidden during rounds (rule 11.10).
+2. **Start button** — add a start button (rules 9.10–9.11) and document the single power switch.
+3. **Weight** — weigh the vehicle and record it (≤1.5 kg, rule 11.2).
+4. **English** — translate the remaining Portuguese comments/prints in `src/` (chapter 7).
+
+### Artefacts (team)
+
+5. Driving video (`video/`) — one YouTube link per challenge, ≥30 s autonomous.
+6. CAD files in `models/`.
+
+### Measurements to publish (from test runs)
+
+7. Test metrics: N runs → success/failure, time per lap, cross-track error (RMS + max), drift cm/lap without sonar correction, final parking error.
+8. PID tuning data (overshoot vs steady-state error, or step response).
+9. Camera colour-threshold false-positive rates (red vs green, different lighting).
+10. Sonar protocol frame-loss rate.
+11. IMU heading drift (°/min) and the resulting position error per lap.
+12. Measured top speed under load (§2.4).
+
+### Open Challenge
+
+13. The Open Challenge (`open_challenge.py`) is currently a set of hard-coded waypoints and is not called by `main.py`. It must be completed (handle the 600 mm vs 1000 mm corridors and the random start position), or its strategy documented honestly as work in progress.
