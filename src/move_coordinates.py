@@ -127,7 +127,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 30
-    max_speed = 60   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
+    max_speed = 45   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
     min_speed = 5
 
     if detect_parking_wall:
@@ -193,8 +193,6 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         x_prime = ACx*ux + ACy*uy
         y_prime = ACx*ux_perp + ACy*uy_perp
         remaining_distance = L - x_prime
-
-        print(remaining_distance)
 
         
         if remaining_distance < 0:
