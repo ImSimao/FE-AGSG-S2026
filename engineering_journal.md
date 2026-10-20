@@ -92,6 +92,15 @@ The drivetrain is built from:
 | Differential | **Metal RC differential (Wltoys 144001 type)** | lets the two rear wheels rotate at different speeds through corners |
 | Rear axle | driven by the differential | — |
 
+**Bearings:**
+
+| Location | Count | OD | Width | ID |
+|----------|------|-----|-------|-----|
+| Rear axle | 2 | 11 mm | 4 mm | 7 mm |
+| Rear axle | 2 | 11 mm | 3 mm | 7 mm |
+| Motor | 1 | 11 mm | 3 mm | 7 mm |
+| Front wheels | 2 | 8 mm | 4 mm | 3 mm |
+
 ### 2.3 Steering
 
 The front wheels use **Ackermann steering geometry**, driven by a single **Savox SH-0255 MG servo**. We chose this servo for its metal gears and low play (backlash): a micro 9g SG90 servo (both plastic and metal-gear versions) broke under load, while the Savox has held up reliably. Ackermann geometry makes the inner wheel turn more sharply than the outer wheel in a corner, so the wheels roll without slipping — this is important because our odometry assumes the wheels do not slip.
