@@ -49,7 +49,14 @@ The vehicle is a compact **Ackermann-steering car** with a single rear **DC moto
 
 The control software runs on **three programmable boards**: a Raspberry Pi Pico 2 (main controller), a Raspberry Pi Pico 1 (sonar controller) and an OpenMV H7 (camera), all programmed in **MicroPython**.
 
-> **Team photo** — to be added here (stored in `t-photos/`).
+<div align="center">
+    <img src="t-photos/TeamPhoto.jpg" width="400" alt="Team photo">
+</div>
+
+<div align="center">
+    <img src="t-photos/joana.jpg" width="200" alt="Joana Silva">
+    <img src="t-photos/simao.jpg" width="200" alt="Simão Freire">
+</div>
 
 ---
 
