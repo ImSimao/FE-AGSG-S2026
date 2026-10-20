@@ -17,7 +17,7 @@ from encoder import Encoder
 from background import cruiseControl
 
 TARGET_CM = 100       # total distance to drive
-MAX_SPEED = 30        # cm/s
+MAX_SPEED = 45        # cm/s (match move_coordinates; try 60 if needed)
 MIN_SPEED = 5         # cm/s at the end of the deceleration
 DECEL_CM = 30         # start decelerating this far from the target
 
