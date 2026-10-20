@@ -141,7 +141,42 @@ Separating the motor rail from the logic rail was a direct consequence of a prob
 
 ### 3.2 Power budget
 
-> **[TBD — measure]** Current draw of each rail (motor stall/running, servo peak, logic+sensors). The cells are 1800 mAh; we will add the measured figures and the resulting endurance estimate here.
+Estimated current draw per component (datasheet values):
+
+| Component | Voltage | Typical current |
+|-----------|---------|-----------------|
+| N20 motor (driving) | 11 V | ~200 mA (0.3 A rated, 0.9 A stall) |
+| Servo Savox SH-0255 MG | 5 V | ~150 mA (up to ~750 mA stall) |
+| Pico 2 (main) | 5 V | ~60 mA |
+| Pico 1 (sonar) | 5 V | ~40 mA |
+| BNO085 | 3.3 V | ~4 mA |
+| HC-06 | 5 V | ~30 mA |
+| 4× SRF04 | 5 V | ~15 mA total |
+| OpenMV H7 | 5 V | ~200 mA |
+
+Per rail:
+
+| Rail | Current | Power (at load) |
+|------|---------|-----------------|
+| Motor (11 V, LM2596) | 200 mA | ~2.2 W |
+| Servo (5 V, L7805CV #1) | 150 mA | ~0.75 W |
+| Logic/sensors (5 V, L7805CV #2) | ~350 mA | ~1.75 W |
+| **Total (at load)** | | **~4.7 W** |
+
+Power drawn from the battery (including regulator losses):
+
+- **LM2596** (buck, ~85% efficiency): 2.2 / 0.85 ≈ **2.6 W**
+- **L7805CV ×2** (linear, 11 V → 5 V): (0.15 + 0.35 A) × 11 V ≈ **5.5 W**
+- **Total ≈ 8.1 W** (average)
+
+**Battery and runtime:**
+
+- Battery: 3× 18650 = 11.1 V × 1800 mAh = **20 Wh**
+- Theoretical runtime: 20 / 8.1 ≈ **~2.5 h**
+- Practical runtime (with start-up peaks and margins): **~1.5–2 h**
+- Peak (stall): motor 0.9 A + servo 0.75 A → up to **~20 W** (brief)
+
+The two L7805CV linear regulators waste ~55% of the input power as heat (11 V → 5 V); they dominate the battery draw. A buck converter on the 5 V rails would roughly double the runtime — a possible future improvement.
 
 ### 3.3 Sensors — selection and placement
 
@@ -393,10 +428,9 @@ The commit history shows the development over time, and the README plus code com
 
 ## 7. To be completed (measurements & artefacts)
 
-The following items need real data from our tests/photos before final submission:
+The following items are still pending before final submission:
 
-1. Motor stall/running current and measured top speed (§2.4).
-2. Power budget figures (§3.2).
-3. Version/iteration history aligned with the git log (§5.3).
-4. Team photos (`t-photos/`), vehicle photos (`v-photos/`), driving video (`video/`).
-5. CAD files in `models/`.
+1. Driving video (`video/`) — YouTube link, ≥30 s of autonomous driving.
+2. CAD files in `models/`.
+3. Measured top speed under load (§2.4) — to confirm the ~77 cm/s estimate.
+4. Version/iteration history aligned with the git log (§5.3).
