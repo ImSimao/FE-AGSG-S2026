@@ -191,7 +191,7 @@ We chose threads over `uasyncio` because, in our tests, the cooperative schedule
 
 ### 4.4 State machine (obstacle challenge)
 
-The obstacle challenge is a state machine (see the flowchart in `schemes/`):
+The obstacle challenge is a state machine (see the flowchart in `other/img/`):
 
 1. **Determine driving direction** — at the start, the robot compares the left and right sonar readings and picks clockwise or counter-clockwise accordingly.
 2. **Park out** — it leaves the starting parking lot and aligns with the outer lane.
@@ -351,6 +351,7 @@ The repository is structured so another team can rebuild the vehicle:
 - `README.md` — system description (English, ≥5000 chars), module responsibilities and build/upload steps.
 - `models/` — CAD and 3D-printable files.
 - `schemes/` — wiring diagrams (communication and power).
+- `other/img/` — the obstacle-challenge state machine flowchart.
 - `src/` — all control software (main, sonar slave, camera firmware).
 - `t-photos/`, `v-photos/`, `video/` — team/vehicle photos and driving video.
 
