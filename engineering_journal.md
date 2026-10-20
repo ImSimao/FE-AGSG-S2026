@@ -61,7 +61,18 @@ The vehicle measures **287 mm (length) × 61 mm (width) × 170 mm (height)**. We
 
 The front of the body is a raised section that stays **above** the height of the field walls (100 mm), so it passes over low obstacles without touching them. The lower part of the chassis — the part that interacts with the field elements — is only **127 mm** long. This keeps the vehicle short at wall level while the raised section provides clearance over low obstacles.
 
-> **Vehicle photos** (front, rear, left, right, top, bottom) — to be added here (stored in `v-photos/`).
+**Vehicle views:**
+
+<div align="center">
+    <img src="v-photos/front.jpg" width="250" alt="front">
+    <img src="v-photos/back.jpg" width="250" alt="rear">
+    <img src="v-photos/left.jpg" width="250" alt="left">
+</div>
+<div align="center">
+    <img src="v-photos/right.jpg" width="250" alt="right">
+    <img src="v-photos/top.jpg" width="250" alt="top">
+    <img src="v-photos/bottom.jpg" width="250" alt="bottom">
+</div>
 
 ### 2.2 Drive train
 
