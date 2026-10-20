@@ -2,6 +2,17 @@
 
 **Team:** AGSG (Portugal) — Joana Silva, Simão Freire · **Coach:** Tiago Severino
 
+## Table of contents
+
+1. [Introduction](#1-introduction)
+2. [Vehicle Hardware](#2-vehicle-hardware)
+3. [Software Architecture](#3-software-architecture)
+4. [Build and Upload](#4-build-and-upload)
+5. [Repository Structure](#5-repository-structure)
+6. [Reproducibility](#6-reproducibility)
+
+---
+
 ## 1. Introduction
 
 This repository contains the full engineering documentation and control software of our self-driving vehicle, developed for the **WRO Future Engineers** category in the **2026** season. The vehicle is a small **Ackermann-style car** that drives autonomously around the field, follows the outer lane, obeys traffic signs, avoids obstacles and parks itself.

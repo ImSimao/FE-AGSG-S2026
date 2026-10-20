@@ -6,6 +6,41 @@
 
 ---
 
+## Table of contents
+
+1. [Introduction](#1-introduction)
+2. [Mobility & Mechanical Design](#2-mobility--mechanical-design)
+   - [2.1 Chassis and dimensions](#21-chassis-and-dimensions)
+   - [2.2 Drive train](#22-drive-train)
+   - [2.3 Steering](#23-steering)
+   - [2.4 Motor selection and speed reasoning](#24-motor-selection-and-speed-reasoning)
+3. [Power & Sensor Architecture](#3-power--sensor-architecture)
+   - [3.1 Power distribution](#31-power-distribution)
+   - [3.2 Power budget](#32-power-budget)
+   - [3.3 Sensors](#33-sensors--selection-and-placement)
+   - [3.4 Calibration](#34-calibration)
+   - [3.5 Gyro evaluation](#35-gyro-evaluation)
+4. [Software Architecture & Obstacle Strategy](#4-software-architecture--obstacle-strategy)
+   - [4.1 Overview](#41-overview--three-boards)
+   - [4.2 Modules](#42-main-controller--modules)
+   - [4.3 Concurrency](#43-concurrency--two-cores)
+   - [4.4 State machine](#44-state-machine-obstacle-challenge)
+   - [4.5 Field model](#45-field-model)
+   - [4.6 Navigation and control](#46-navigation-and-control)
+   - [4.7 Traffic-sign detection and passing](#47-traffic-sign-detection-and-passing)
+   - [4.8 Noise handling](#48-noise-handling)
+   - [4.9 Testing, tuning and validation](#49-testing-tuning-and-validation)
+   - [4.10 Edge cases](#410-edge-cases)
+5. [Systems Thinking & Engineering Decisions](#5-systems-thinking--engineering-decisions)
+   - [5.1 Constraints](#51-constraints)
+   - [5.2 Key trade-offs and decisions](#52-key-trade-offs-and-decisions)
+   - [5.3 Iteration history](#53-iteration-history)
+   - [5.4 Risk & failure analysis](#54-risk--failure-analysis)
+6. [Reproducibility & GitHub](#6-reproducibility--github)
+7. [To be completed](#7-to-be-completed)
+
+---
+
 ## 1. Introduction
 
 This journal documents the engineering process behind our self-driving vehicle for the WRO Future Engineers 2026 season. It explains not only *what* we built, but *why* we made each decision, the constraints we worked under, the trade-offs we faced, and the iterations that led to the final design.
@@ -39,19 +74,30 @@ The drivetrain is built from:
 
 The front wheels use **Ackermann steering geometry**, driven by a single **Savox SH-0255 MG servo**. Ackermann geometry makes the inner wheel turn more sharply than the outer wheel in a corner, so the wheels roll without slipping — this is important because our odometry assumes the wheels do not slip.
 
-### 2.4 Speed reasoning
+### 2.4 Motor selection and speed reasoning
 
-The motor runs at **1000 RPM at 12 V** (we feed it ≈11 V, so ≈92% of that). With the 3:5 reduction, the wheels turn at:
+**Requirement:** a small motor with an encoder, enough torque, and a maximum speed of about **80 cm/s**.
+
+We compared the N20 motor family (12 V) at different gearbox ratios:
+
+| Reduction ratio | No-load speed (RPM) | Rated speed (RPM) | Max torque (kg·cm) | Wheel speed at rated (cm/s) |
+|----------------:|--------------------:|------------------:|-------------------:|----------------------------:|
+| 10 (3000 RPM) | 3000 | 2300 | 0.20 | ~231 |
+| 30 (1000 RPM) | 1000 | 770 | 0.48 | ~77 |
+| 50 (600 RPM) | 600 | 460 | 0.80 | ~46 |
+
+The **3000 RPM** version is far too fast (and has the lowest torque), while the **600 RPM** version is too slow. The **1000 RPM** version hits the ~80 cm/s target (≈77 cm/s at rated speed) with enough torque reserve.
+
+With the 3:5 external reduction, the wheel speed is:
 
 ```
-wheel RPM = 1000 × (3/5) = 600 RPM = 10 rev/s
-wheel circumference = π × 3.2 cm = 10.05 cm
-theoretical top speed ≈ 10 × 10.05 ≈ 100 cm/s
+wheel RPM = motor RPM × (3/5)
+wheel speed (cm/s) = wheel RPM × π × 3.2 cm / 60
 ```
 
-We run the robot at a **target speed of 45–60 cm/s** — well below the theoretical maximum — so the motor keeps enough torque reserve for acceleration and the wheels do not slip. The gear reduction (3:5) trades speed for torque, which is what a small, heavy vehicle needs.
+At rated speed the 1000 RPM motor gives ~77 cm/s at the wheel; no-load gives ~100 cm/s. We run at a target speed of **45–60 cm/s**, below the rated speed, so the motor keeps torque reserve for acceleration and the wheels do not slip.
 
-> **[TBD — to confirm]** Motor stall current / torque curve, and measured top speed under load.
+**Measured currents (N20 1000 RPM):** no-load 75 mA, load 0.3 A, stall 0.9 A.
 
 ---
 
@@ -77,7 +123,7 @@ Separating the motor rail from the logic rail was a direct consequence of a prob
 
 | Sensor | Model | Role | Why this one |
 |--------|-------|------|--------------|
-| IMU | **BNO085** | heading | fused **game rotation vector** without a magnetometer — the competition environment can contain magnetic fields (last year's CMPS12 compass suffered from them, so we switched) |
+| IMU | **BNO085** | heading | fused **game rotation vector** without a magnetometer — immune to the magnetic fields that made last year's CMPS12 compass unusable (see §3.5) |
 | Distance | **4× SRF04 ultrasonic** (front, rear, left, right) | wall/obstacle distance | cheap, simple, sufficient range for the field |
 | Camera | **OpenMV H7 R1** | traffic-sign colour detection | boots instantly, onboard colour detection, streams detections over UART (replaced a Raspberry Pi Zero + Pi Camera, whose boot was too slow) |
 | Encoder | **quadrature encoder on the N20 motor** | odometry (distance) | provides the distance travelled |
@@ -89,6 +135,17 @@ Separating the motor rail from the logic rail was a direct consequence of a prob
 - **Encoder** — the quadrature signal is debounced in software (a **dynamic debounce** whose window scales with speed) because the motor produces electrical noise (see §4).
 - **IMU** — uses the game rotation vector, so no compass calibration is required; the yaw reference is set at the start of a run.
 - **Sonar** — the four sensors are measured **sequentially** to avoid cross-talk between them (see §4).
+
+### 3.5 Gyro evaluation
+
+We compared two heading sensors:
+
+| Sensor | Magnetometer | Drift per lap | Notes |
+|--------|:------------:|--------------:|-------|
+| CMPS12 | yes | ~0° | but on tracks with magnetic fields the heading can jump by ~40° within a single lap |
+| BNO085 (game rotation vector) | no | ~1° | small, consistent drift; unaffected by magnetic fields |
+
+The CMPS12 reads ~0° drift in a clean environment, but the competition track can contain magnetic fields that cause errors of up to ~40° in a single lap — unusable for navigation. The BNO085 drifts about 1° per lap, but that drift is small, consistent and immune to magnetic fields; the remaining drift is corrected by the sonar-based odometry corrections (§4.6).
 
 ---
 
