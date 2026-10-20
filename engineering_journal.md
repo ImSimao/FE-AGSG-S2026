@@ -49,6 +49,8 @@ The vehicle is a compact **Ackermann-steering car** with a single rear **DC moto
 
 The control software runs on **three programmable boards**: a Raspberry Pi Pico 2 (main controller), a Raspberry Pi Pico 1 (sonar controller) and an OpenMV H7 (camera), all programmed in **MicroPython**.
 
+> **Team photo** — to be added here (stored in `t-photos/`).
+
 ---
 
 ## 2. Mobility & Mechanical Design
@@ -58,6 +60,8 @@ The control software runs on **three programmable boards**: a Raspberry Pi Pico 
 The vehicle measures **287 mm (length) × 61 mm (width) × 170 mm (height)**. We aimed for the smallest practical footprint so the robot manoeuvres easily between the walls and obstacles.
 
 The front of the body is a raised section that stays **above** the height of the field walls (100 mm), so it passes over low obstacles without touching them. The lower part of the chassis — the part that interacts with the field elements — is only **127 mm** long. This keeps the vehicle short at wall level while the raised section provides clearance over low obstacles.
+
+> **Vehicle photos** (front, rear, left, right, top, bottom) — to be added here (stored in `v-photos/`).
 
 ### 2.2 Drive train
 
@@ -113,6 +117,8 @@ The battery is **3× 18650 Li-ion cells in series (11.1 V nominal, 1800 mAh)**. 
 | Servo | L7805CV #1 | 5 V | Savox servo |
 | Logic/sensors | L7805CV #2 | 5 V | Pico 2, Pico 1, BNO085, HC-06, SRF04 ×4, OpenMV |
 
+![Power distribution diagram](schemes/power_diagram.png)
+
 Separating the motor rail from the logic rail was a direct consequence of a problem we hit early on: motor switching noise was coupling into the encoder signal (see §4 and §5). The full wiring diagram is in `schemes/`.
 
 ### 3.2 Power budget
@@ -129,6 +135,8 @@ Separating the motor rail from the logic rail was a direct consequence of a prob
 | Encoder | **quadrature encoder on the N20 motor** | odometry (distance) | provides the distance travelled |
 
 **Placement:** the four sonars point forward, backward, left and right; the camera faces forward to see the traffic signs; the IMU is mounted on the chassis so its axes align with the vehicle.
+
+**Sonar orientation:** the front, left and right sonars are mounted **vertically** — their wider field of view in the vertical plane gives more reliable readings while driving (we tested that vertical reads better than horizontal in motion). Only the **rear** sonar is horizontal, due to lack of space.
 
 ### 3.4 Calibration
 
@@ -158,6 +166,8 @@ The CMPS12 reads ~0° drift in a clean environment, but the competition track ca
 | Raspberry Pi Pico 2 (main) | `src/` (MicroPython) | navigation, control, sensor fusion |
 | Raspberry Pi Pico 1 (sonar) | `src/SonarSlave/` | reads the 4 sonars, streams distances over UART |
 | OpenMV H7 | `src/Camera/` | detects red/green traffic signs, streams detections over UART |
+
+![Communication diagram](schemes/communication_diagram.png)
 
 ### 4.2 Main controller — modules
 
@@ -191,7 +201,9 @@ We chose threads over `uasyncio` because, in our tests, the cooperative schedule
 
 ### 4.4 State machine (obstacle challenge)
 
-The obstacle challenge is a state machine (see the flowchart in `other/img/`):
+The obstacle challenge is a state machine:
+
+![Obstacle challenge state machine flowchart](other/img/flowchart_state_machine.png)
 
 1. **Determine driving direction** — at the start, the robot compares the left and right sonar readings and picks clockwise or counter-clockwise accordingly.
 2. **Park out** — it leaves the starting parking lot and aligns with the outer lane.
