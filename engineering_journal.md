@@ -433,7 +433,7 @@ The commit history shows the development over time, and the README plus code com
 
 ### Compliance (team)
 
-1. **Remove Bluetooth** — the HC-06 must be physically removed and the telemetry path disabled, since RF is forbidden during rounds (rule 11.10).
+1. **Bluetooth (debug only)** — the HC-06 is used only for debugging and is physically removed during competition rounds; the telemetry path is disabled for rounds (rule 11.10).
 2. **Start button** — add a start button (rules 9.10–9.11) and document the single power switch.
 3. **Weight** — weigh the vehicle and record it (≤1.5 kg, rule 11.2).
 4. **English** — translate the remaining Portuguese comments/prints in `src/` (chapter 7).

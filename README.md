@@ -42,7 +42,7 @@ All control software is written in **MicroPython**.
 | Steering | Savox SH-0255 MG servo | Ackermann front steering |
 | IMU | BNO085 | heading (game rotation vector) |
 | Distance sensors | 4× SRF04 ultrasonic (front, rear, left, right) | wall/obstacle distance |
-| Communication | HC-06 Bluetooth module | wireless telemetry (TX only) |
+| Communication | HC-06 Bluetooth module | wireless telemetry for debugging only (TX only; removed during competition rounds) |
 | Battery | 3× 18650 Li-ion in series (11.1 V, 1800 mAh) | power source |
 | Regulators | LM2596 (buck), 2× L7805CV | power distribution |
 
