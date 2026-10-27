@@ -3,7 +3,7 @@ from camera import Camera
 import time
 import math
 from compass import Compass
-from encoder import Encoder, update_debounce_from_speed
+from encoder import Encoder
 from motor import Motor
 from state import state
 from telemetry import Telemetry
@@ -249,7 +249,6 @@ def update_speed(last_distance_cm, last_speed_ms):
         return current_distance_cm
 
     state.current_speed = delta_cm / delta_time_s
-    update_debounce_from_speed(abs(state.current_speed))
 
     cruiseControl.update(delta_time_s)
 
