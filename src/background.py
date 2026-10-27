@@ -58,18 +58,15 @@ class CruiseControl:
         elif self.current_pwm < -1.0:
             self.current_pwm = -1.0
 
-        # Motor output:
-        #   > 0              -> drive forward
-        #   < 0, target < 0  -> drive backward (intentional reverse)
-        #   < 0, target >= 0 -> brake hard (the robot is overshooting)
+        # Motor output: positive PWM drives forward, negative PWM applies
+        # reverse torque (mild braking). This slows the robot down without
+        # stopping it completely (which would need extra torque to restart).
         if self.current_pwm > 0:
             Motor.forward()
             Motor.ena.duty_u16(int(self.current_pwm * 65535))
-        elif state.target_speed < 0:
+        else:
             Motor.backward()
             Motor.ena.duty_u16(int(-self.current_pwm * 65535))
-        else:
-            Motor.brake()
 
 
 cruiseControl = CruiseControl()
