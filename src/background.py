@@ -22,7 +22,7 @@ LOOP_SLEEP_MS = 1
 class CruiseControl:
     """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/70, max_accel=1/2, max_decel=3.0, min_drive_pwm=0.15):
+    def __init__(self, kp=1/150, max_accel=1/2, max_decel=3.0, min_drive_pwm=0.15):
         self.kp = kp
         self.max_accel = max_accel   # max PWM increase per second
         self.max_decel = max_decel   # max PWM decrease per second
@@ -235,7 +235,9 @@ def update_speed(last_distance_cm, last_speed_ms):
     if delta_time_ms <= 0:
         return current_distance_cm
 
-    state.current_speed = delta_cm / delta_time_s
+    raw_speed = delta_cm / delta_time_s
+    # Low-pass filter so the controller does not chase encoder noise / cogging.
+    state.current_speed = state.current_speed + 0.5 * (raw_speed - state.current_speed)
 
     cruiseControl.update(delta_time_s)
 
