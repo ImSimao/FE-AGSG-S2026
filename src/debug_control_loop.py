@@ -39,15 +39,10 @@ def main():
         travelled = enc - start_enc
         remaining = TARGET_CM - travelled
 
-        speed = abs(state.raw_speed)
-        brake_distance = speed * speed / (2 * BRAKE_DECEL)
+        if remaining <= 0:
+            break
 
-        if remaining <= brake_distance or remaining <= 0:
-            # Close enough: brake and wait for the robot to stop.
-            state.target_speed = 0
-            if speed < 1.0:
-                break
-        elif remaining < DECEL_CM:
+        if remaining < DECEL_CM:
             state.target_speed = remaining / DECEL_CM * (MAX_SPEED - MIN_SPEED) + MIN_SPEED
         else:
             state.target_speed = MAX_SPEED

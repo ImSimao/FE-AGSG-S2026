@@ -199,18 +199,11 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         remaining_distance = L - x_prime
 
         
-        # Brake anticipation: stop the motor when the remaining distance equals
-        # the distance needed to stop at the current speed (v^2 / 2a).
-        speed = abs(state.raw_speed)
-        brake_distance = speed * speed / (2 * BRAKE_DECEL)
-        if remaining_distance <= brake_distance or remaining_distance < 0:
+        if remaining_distance < 0:
             state.target_speed = 0
+            pid_y.reset()
             Servo.set_angle(0)
-            if speed < 1.0:
-                pid_y.reset()
-                break
-            time.sleep(1/100)
-            continue
+            break
 
         if remaining_distance < desaccelerate_distance:
             state.target_speed = remaining_distance / desaccelerate_distance * (max_speed - min_speed) + min_speed
