@@ -20,79 +20,30 @@ LOOP_SLEEP_MS = 1
 
 
 class CruiseControl:
-    def __init__(self, max_pwm=1, min_pwm=-1,
-                 max_accel=1/3, max_decel=2/3):
-        """
-        max_pwm: maximum PWM value
-        min_pwm: minimum PWM value
-        max_accel: maximum increase in PWM per second
-        max_decel: maximum decrease in PWM per second
-        """
-        self.max_pwm = max_pwm
-        self.min_pwm = min_pwm
-        self.max_accel = max_accel
-        self.max_decel = max_decel
+    """Simple incremental proportional controller."""
 
-        self.current_pwm = 0.0    # current PWM output
-
-        # Simple proportional gain (tune as needed)
-        self.kp = 1/70
+    def __init__(self, kp=1/70):
+        self.kp = kp
+        self.current_pwm = 0.0
 
     def update(self, dt):
-        """
-        Update control loop.
-
-        dt: time step (seconds)
-
-        Returns: new PWM value
-        """
-
-        # Proportional control to compute desired PWM
         error = state.target_speed - state.current_speed
-        desired_pwm = self.current_pwm + self.kp * error
+        self.current_pwm += self.kp * error
 
-        # Clamp desired PWM to valid range
-        desired_pwm = max(self.min_pwm, min(self.max_pwm, desired_pwm))
+        if self.current_pwm > 1.0:
+            self.current_pwm = 1.0
+        elif self.current_pwm < -1.0:
+            self.current_pwm = -1.0
 
-        # Apply acceleration/deceleration limits
-        delta_pwm = desired_pwm - self.current_pwm
-
-       # ---- MAIN FIX ----
-        # If the error points in the OPPOSITE direction to the current PWM,
-        # we are reversing direction (or braking until it reverses).
-        # In that case use max_decel, not max_accel.
-        reversing = (self.current_pwm * error) < 0
-
-        if reversing:
-            max_delta = self.max_decel * dt
-            delta_pwm = max(-max_delta, min(max_delta, delta_pwm))
-        elif delta_pwm > 0:
-            delta_pwm = min(delta_pwm, self.max_accel * dt)
-        else:
-            delta_pwm = max(delta_pwm, -self.max_decel * dt)
-
-        self.current_pwm += delta_pwm
-        self.current_pwm = max(self.min_pwm, min(self.max_pwm, self.current_pwm))
-
-        # Do not reverse direction during normal driving: with target >= 0 the PWM
-        # must not go negative (otherwise the motor reverses to correct overshoot).
-        if state.target_speed >= 0 and self.current_pwm < 0:
-            self.current_pwm = 0.0
-        elif state.target_speed < 0 and self.current_pwm > 0:
-            self.current_pwm = 0.0
-
-        # ---- MOTOR OUTPUT ----
-        # Set the direction BEFORE the duty
         if self.current_pwm > 0:
             Motor.forward()
         elif self.current_pwm < 0:
             Motor.backward()
         else:
             Motor.stop()
-            return self.current_pwm  # do not change the duty after stop()
+            return
 
-        duty = int(min(65535, abs(self.current_pwm) * 65535))
-        Motor.ena.duty_u16(duty)
+        Motor.ena.duty_u16(int(abs(self.current_pwm) * 65535))
 
 
 cruiseControl = CruiseControl()
