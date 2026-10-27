@@ -74,7 +74,12 @@ class CruiseControl:
 
         delta = desired_pwm - self.current_pwm
 
-        if delta > 0:
+        if (abs(state.current_speed) < 2.0 and
+                abs(self.current_pwm) < self.min_drive_pwm):
+            # Starting from rest: climb quickly to the static-friction floor so
+            # the robot does not sit stalled while the PWM slowly ramps up.
+            max_delta = self.max_accel * 4.0 * accel_scale * dt
+        elif delta > 0:
             max_delta = self.max_accel * accel_scale * dt
         else:
             max_delta = self.max_decel * accel_scale * dt
