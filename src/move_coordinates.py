@@ -133,7 +133,7 @@ def rotate_angle(angle, reverse = False):
 
         time.sleep(1/100)
 
-def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
+def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False, stop_when = None):
 
     desaccelerate_distance = 30
     max_speed = 70   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
@@ -185,6 +185,14 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         now_ms = time.ticks_ms()
         dt = time.ticks_diff(now_ms, last_loop_ms) / 1000.0
         last_loop_ms = now_ms
+
+        # Optional early stop: keep moving continuously until the caller's
+        # condition becomes true (e.g. the camera sees the lane colour).
+        if stop_when is not None and stop_when():
+            state.target_speed = 0
+            Servo.set_angle(0)
+            pid_y.reset()
+            break
 
         if time.ticks_diff(now_ms, move_start_ms) > MOVE_TIMEOUT_MS:
             state.target_speed = 0
