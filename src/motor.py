@@ -20,3 +20,9 @@ class Motor:
     def stop():
         Motor.in1.off()
         Motor.in2.off()
+
+    @staticmethod
+    def brake():
+        # Short the motor (both inputs high) for active braking.
+        Motor.in1.on()
+        Motor.in2.on()

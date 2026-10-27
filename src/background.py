@@ -22,7 +22,7 @@ LOOP_SLEEP_MS = 1
 class CruiseControl:
     """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/70, max_accel=1/3, max_decel=2/3):
+    def __init__(self, kp=1/70, max_accel=1/3, max_decel=2.0):
         self.kp = kp
         self.max_accel = max_accel   # max PWM increase per second
         self.max_decel = max_decel   # max PWM decrease per second
@@ -58,16 +58,18 @@ class CruiseControl:
         elif self.current_pwm < -1.0:
             self.current_pwm = -1.0
 
-        # Motor output
+        # Motor output:
+        #   > 0              -> drive forward
+        #   < 0, target < 0  -> drive backward (intentional reverse)
+        #   < 0, target >= 0 -> brake hard (the robot is overshooting)
         if self.current_pwm > 0:
             Motor.forward()
-        elif self.current_pwm < 0:
+            Motor.ena.duty_u16(int(self.current_pwm * 65535))
+        elif state.target_speed < 0:
             Motor.backward()
+            Motor.ena.duty_u16(int(-self.current_pwm * 65535))
         else:
-            Motor.stop()
-            return
-
-        Motor.ena.duty_u16(int(abs(self.current_pwm) * 65535))
+            Motor.brake()
 
 
 cruiseControl = CruiseControl()
