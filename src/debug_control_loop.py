@@ -16,10 +16,10 @@ from state import state
 from encoder import Encoder
 from background import cruiseControl
 
-TARGET_CM = 100       # total distance to drive
-MAX_SPEED = 45        # cm/s (match move_coordinates; try 60 if needed)
-MIN_SPEED = 5         # cm/s at the end of the deceleration
-DECEL_CM = 30         # start decelerating this far from the target
+TARGET_CM = 200       # total distance to drive
+MAX_SPEED = 80        # cm/s (match move_coordinates; try 60 if needed)
+MIN_SPEED = 12        # cm/s at the end of the deceleration (motor cannot creep below ~12)
+DECEL_CM = 50         # start decelerating this far from the target
 
 def main():
     state.clockwise = 1  # <-- set to 1 or -1 for your field direction

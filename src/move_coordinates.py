@@ -128,7 +128,7 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
     desaccelerate_distance = 30
     max_speed = 45   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
-    min_speed = 5
+    min_speed = 12   # motor cannot creep below ~12 cm/s (static friction)
 
     if detect_parking_wall:
         max_speed = 15
