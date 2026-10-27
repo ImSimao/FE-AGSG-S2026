@@ -35,7 +35,7 @@ class CruiseControl:
         self._diag_n = getattr(self, "_diag_n", 0) + 1
         if self._diag_n >= 5:   # about every 500 ms
             self._diag_n = 0
-            print("DIAG t=%d tgt=%.1f spd=%.1f pwm=%.2f steer=%d" % (
+            Telemetry.log("DIAG t=%d tgt=%.1f spd=%.1f pwm=%.2f steer=%d" % (
                 time.ticks_ms(), state.target_speed, state.current_speed,
                 self.current_pwm, Servo.current_angle))
         # --- END TEMP DIAGNOSTIC ---
