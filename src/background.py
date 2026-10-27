@@ -37,6 +37,16 @@ class CruiseControl:
             Motor.brake()
             return
 
+        # Direction change: if the target is opposite to the current motion,
+        # reversing now would make the wheels skid (the encoder counts wheel
+        # spin that does not translate into travel, corrupting the odometry).
+        # Brake to a full stop first, then accelerate in the new direction.
+        if (state.target_speed * state.current_speed < 0 and
+                abs(state.current_speed) > 2.0):
+            self.current_pwm = 0.0
+            Motor.brake()
+            return
+
         error = state.target_speed - state.current_speed
         desired_pwm = self.current_pwm + self.kp * error
 
