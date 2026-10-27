@@ -31,15 +31,6 @@ class CruiseControl:
         self.current_pwm = 0.0
 
     def update(self, dt):
-        # --- TEMP DIAGNOSTIC (timeline of target / speed / pwm) ---
-        self._diag_n = getattr(self, "_diag_n", 0) + 1
-        if self._diag_n >= 5:   # about every 500 ms
-            self._diag_n = 0
-            Telemetry.log("DIAG t=%d tgt=%.1f spd=%.1f pwm=%.2f steer=%d" % (
-                time.ticks_ms(), state.target_speed, state.current_speed,
-                self.current_pwm, Servo.current_angle))
-        # --- END TEMP DIAGNOSTIC ---
-
         # Target stopped: brake so the robot stops at the target instead of
         # coasting past it (the motor cannot creep below ~10 cm/s).
         if state.target_speed == 0:
@@ -50,9 +41,10 @@ class CruiseControl:
         # Direction change: if the target is opposite to the current motion,
         # reversing now would make the wheels skid (the encoder counts wheel
         # spin that does not translate into travel, corrupting the odometry).
-        # Brake to a full stop first, then accelerate in the new direction.
-        if (state.target_speed * state.current_speed < 0 and
-                abs(state.current_speed) > 2.0):
+        # Use the RAW speed here, not the filtered one: it falls to zero in
+        # ~150-250 ms after braking instead of ~500 ms.
+        if (state.target_speed * state.raw_speed < 0 and
+                abs(state.raw_speed) > 3.0):
             self.current_pwm = 0.0
             Motor.brake()
             return
