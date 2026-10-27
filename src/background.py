@@ -5,6 +5,7 @@ import math
 from compass import Compass
 from encoder import Encoder
 from motor import Motor
+from servo import Servo
 from state import state
 from telemetry import Telemetry
 
@@ -63,13 +64,20 @@ class CruiseControl:
         if state.target_speed > 0 and desired_pwm < self.min_drive_pwm:
             desired_pwm = self.min_drive_pwm
 
-        # Rate-limit the change (acceleration / deceleration)
+        # Rate-limit the change (acceleration / deceleration). A sharp steering
+        # angle needs less torque or the wheels scrub, so the rate is scaled:
+        # full when the servo is straight, half when it is fully steered.
+        steering = abs(Servo.current_angle) / float(Servo._MAX_STEERING_OFFSET)
+        if steering > 1.0:
+            steering = 1.0
+        accel_scale = 1.0 - 0.5 * steering
+
         delta = desired_pwm - self.current_pwm
 
         if delta > 0:
-            max_delta = self.max_accel * dt
+            max_delta = self.max_accel * accel_scale * dt
         else:
-            max_delta = self.max_decel * dt
+            max_delta = self.max_decel * accel_scale * dt
 
         if delta > max_delta:
             delta = max_delta

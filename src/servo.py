@@ -11,6 +11,8 @@ class Servo:
     _CENTER_STEERING = 96.5
     _MAX_STEERING_OFFSET = 29
 
+    current_angle = 0   # latest clamped steering angle (degrees)
+
     @staticmethod
     def set_angle(angle: int) -> None:
         
@@ -18,6 +20,8 @@ class Servo:
             angle = Servo._MAX_STEERING_OFFSET
         elif angle < -Servo._MAX_STEERING_OFFSET:
             angle = -Servo._MAX_STEERING_OFFSET
+
+        Servo.current_angle = angle
 
         angle = Servo._CENTER_STEERING - angle
 
