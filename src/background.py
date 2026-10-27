@@ -66,11 +66,11 @@ class CruiseControl:
 
         # Rate-limit the change (acceleration / deceleration). A sharp steering
         # angle needs less torque or the wheels scrub, so the rate is scaled:
-        # full when the servo is straight, half when it is fully steered.
+        # full when the servo is straight, 0.65 when it is fully steered.
         steering = abs(Servo.current_angle) / float(Servo._MAX_STEERING_OFFSET)
         if steering > 1.0:
             steering = 1.0
-        accel_scale = 1.0 - 0.5 * steering
+        accel_scale = 1.0 - 0.35 * steering
 
         delta = desired_pwm - self.current_pwm
 
