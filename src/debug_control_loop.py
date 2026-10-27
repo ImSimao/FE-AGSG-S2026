@@ -1,10 +1,8 @@
-# debug_control_loop.py — trace the "backward odometry" bug.
+# debug_control_loop.py — trace the control loop.
 #
 # Drives forward (constant speed + deceleration) on the main core while the
 # background loop (core 1) runs the odometry + cruise control. Logs the encoder
-# distance, motor PWM (positive = forward, negative = backward), compass heading
-# and speeds, so we can see whether the backward motion comes from the motor
-# actually reversing (PWM negative) or from the compass/odometry.
+# distance, motor PWM, compass heading and speeds.
 #
 # IMPORTANT: set state.clockwise to 1 or -1 to match the field direction.
 #
@@ -20,6 +18,7 @@ TARGET_CM = 200       # total distance to drive
 MAX_SPEED = 80        # cm/s (match move_coordinates; try 60 if needed)
 MIN_SPEED = 12        # cm/s at the end of the deceleration (motor cannot creep below ~12)
 DECEL_CM = 50         # start decelerating this far from the target
+BRAKE_DECEL = 300.0   # cm/s^2, braking deceleration used for the brake anticipation
 
 def main():
     state.clockwise = 1  # <-- set to 1 or -1 for your field direction
@@ -30,40 +29,46 @@ def main():
     start = time.ticks_ms()
     start_enc = Encoder.distance_cm()
     last_enc = start_enc
+    last_print = start
 
     while True:
-        time.sleep_ms(50)
+        time.sleep_ms(10)
         now = time.ticks_ms()
 
         enc = Encoder.distance_cm()
         travelled = enc - start_enc
         remaining = TARGET_CM - travelled
 
-        if remaining <= 0:
-            break
+        speed = abs(state.current_speed)
+        brake_distance = speed * speed / (2 * BRAKE_DECEL)
 
-        # trapezoidal speed profile (like move_coordinates)
-        if remaining < DECEL_CM:
+        if remaining <= brake_distance or remaining <= 0:
+            # Close enough: brake and wait for the robot to stop.
+            state.target_speed = 0
+            if speed < 1.0:
+                break
+        elif remaining < DECEL_CM:
             state.target_speed = remaining / DECEL_CM * (MAX_SPEED - MIN_SPEED) + MIN_SPEED
         else:
             state.target_speed = MAX_SPEED
 
-        print("%d, %.3f, %.3f, %.3f, %.1f, %.1f, %.1f" % (
-            time.ticks_diff(now, start),
-            enc,
-            enc - last_enc,
-            cruiseControl.current_pwm,
-            state.compass_angle,
-            state.target_speed,
-            state.current_speed,
-        ))
-        last_enc = enc
+        if time.ticks_diff(now, last_print) >= 50:
+            print("%d, %.3f, %.3f, %.3f, %.1f, %.1f, %.1f" % (
+                time.ticks_diff(now, start),
+                enc,
+                enc - last_enc,
+                cruiseControl.current_pwm,
+                state.compass_angle,
+                state.target_speed,
+                state.current_speed,
+            ))
+            last_enc = enc
+            last_print = now
 
         if time.ticks_diff(now, start) > 15000:
             break
 
     state.target_speed = 0
-    time.sleep_ms(500)
     print("=== done ===")
 
 if __name__ == "__main__":

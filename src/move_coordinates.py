@@ -11,6 +11,10 @@ from math import sin, cos
 ROTATE_TIMEOUT_MS = 8 * 1000
 MOVE_TIMEOUT_MS = 60 * 1000
 
+# Measured braking deceleration of the robot (cm/s^2). Used for the brake
+# anticipation: the robot needs v^2/(2a) cm to stop from speed v.
+BRAKE_DECEL = 300.0
+
 
 def get_angle_to_rotate(dest_x, dest_y):
     x_initial, y_initial = state.get_relative_odom
@@ -195,11 +199,18 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         remaining_distance = L - x_prime
 
         
-        if remaining_distance < 0:
+        # Brake anticipation: stop the motor when the remaining distance equals
+        # the distance needed to stop at the current speed (v^2 / 2a).
+        speed = abs(state.current_speed)
+        brake_distance = speed * speed / (2 * BRAKE_DECEL)
+        if remaining_distance <= brake_distance or remaining_distance < 0:
             state.target_speed = 0
-            pid_y.reset()
             Servo.set_angle(0)
-            break
+            if speed < 1.0:
+                pid_y.reset()
+                break
+            time.sleep(1/100)
+            continue
 
         if remaining_distance < desaccelerate_distance:
             state.target_speed = remaining_distance / desaccelerate_distance * (max_speed - min_speed) + min_speed
