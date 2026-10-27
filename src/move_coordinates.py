@@ -13,7 +13,7 @@ MOVE_TIMEOUT_MS = 60 * 1000
 
 # Measured braking deceleration of the robot (cm/s^2). Used for the brake
 # anticipation: the robot needs v^2/(2a) cm to stop from speed v.
-BRAKE_DECEL = 300.0
+BRAKE_DECEL = 150.0
 
 
 def get_angle_to_rotate(dest_x, dest_y):
@@ -201,7 +201,7 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         
         # Brake anticipation: stop the motor when the remaining distance equals
         # the distance needed to stop at the current speed (v^2 / 2a).
-        speed = abs(state.current_speed)
+        speed = abs(state.raw_speed)
         brake_distance = speed * speed / (2 * BRAKE_DECEL)
         if remaining_distance <= brake_distance or remaining_distance < 0:
             state.target_speed = 0

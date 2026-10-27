@@ -236,6 +236,7 @@ def update_speed(last_distance_cm, last_speed_ms):
         return current_distance_cm
 
     raw_speed = delta_cm / delta_time_s
+    state.raw_speed = raw_speed
     # Low-pass filter so the controller does not chase encoder noise / cogging.
     state.current_speed = state.current_speed + 0.5 * (raw_speed - state.current_speed)
 
