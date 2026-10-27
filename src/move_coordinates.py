@@ -55,17 +55,6 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
         reverse = not reverse
         #return
 
-    # Bring the robot to a full stop before reversing. Reversing while the robot
-    # is still rolling forward makes the wheels skid (the encoder then counts
-    # wheel spin the robot does not actually travel) and corrupts the odometry.
-    if reverse:
-        state.target_speed = 0
-        stop_start = time.ticks_ms()
-        while (abs(state.raw_speed) > 2.0 and
-               time.ticks_diff(time.ticks_ms(), stop_start) < 1500):
-            time.sleep(1/100)
-        time.sleep(0.1)  # let the chassis settle before reversing
-
     start_ms = time.ticks_ms()
     while True:
         if time.ticks_diff(time.ticks_ms(), start_ms) > ROTATE_TIMEOUT_MS:
@@ -103,15 +92,6 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
 
 
 def rotate_angle(angle, reverse = False):
-    # Same guard as rotate_coordinates: stop before reversing to avoid skidding.
-    if reverse:
-        state.target_speed = 0
-        stop_start = time.ticks_ms()
-        while (abs(state.raw_speed) > 2.0 and
-               time.ticks_diff(time.ticks_ms(), stop_start) < 1500):
-            time.sleep(1/100)
-        time.sleep(0.1)
-
     start_ms = time.ticks_ms()
     while True:
         if time.ticks_diff(time.ticks_ms(), start_ms) > ROTATE_TIMEOUT_MS:
