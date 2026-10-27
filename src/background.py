@@ -30,6 +30,13 @@ class CruiseControl:
         self.current_pwm = 0.0
 
     def update(self, dt):
+        # Target stopped: brake so the robot stops at the target instead of
+        # coasting past it (the motor cannot creep below ~10 cm/s).
+        if state.target_speed == 0:
+            self.current_pwm = 0.0
+            Motor.brake()
+            return
+
         error = state.target_speed - state.current_speed
         desired_pwm = self.current_pwm + self.kp * error
 
