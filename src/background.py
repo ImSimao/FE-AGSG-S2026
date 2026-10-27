@@ -18,6 +18,10 @@ TELEMETRY_INTERVAL_MS = 50    # 20 Hz
 ADJUST_ODOM_INTERVAL_MS = 200 # 5 Hz
 LOOP_SLEEP_MS = 1
 
+# How long to hold the brake when the requested direction is opposite to the
+# current motion, so the wheels really stop before the motor reverses.
+REVERSE_HOLD_MS = 500
+
 
 
 class CruiseControl:
@@ -29,25 +33,31 @@ class CruiseControl:
         self.max_decel = max_decel   # max PWM decrease per second
         self.min_drive_pwm = min_drive_pwm  # min PWM that overcomes motor friction
         self.current_pwm = 0.0
+        self._reverse_hold_until = 0  # ticks_ms deadline of the reversal hold
 
     def update(self, dt):
         # Target stopped: brake so the robot stops at the target instead of
         # coasting past it (the motor cannot creep below ~10 cm/s).
         if state.target_speed == 0:
             self.current_pwm = 0.0
+            self._reverse_hold_until = 0
             Motor.brake()
             return
 
-        # Direction change: if the target is opposite to the current motion,
-        # reversing now would make the wheels skid (the encoder counts wheel
-        # spin that does not translate into travel, corrupting the odometry).
-        # Use the RAW speed here, not the filtered one: it falls to zero in
-        # ~150-250 ms after braking instead of ~500 ms.
-        if (state.target_speed * state.raw_speed < 0 and
-                abs(state.raw_speed) > 3.0):
-            self.current_pwm = 0.0
-            Motor.brake()
-            return
+        # Direction change: hold the brake for REVERSE_HOLD_MS so the wheels
+        # really stop before the motor reverses. Reversing while still rolling
+        # makes them skid (the encoder counts wheel spin that does not
+        # translate into travel) and corrupts the odometry.
+        now = time.ticks_ms()
+        if self._reverse_hold_until == 0:
+            if state.target_speed * state.raw_speed < 0:
+                self._reverse_hold_until = now + REVERSE_HOLD_MS
+        if self._reverse_hold_until != 0:
+            if time.ticks_diff(now, self._reverse_hold_until) < 0:
+                self.current_pwm = 0.0
+                Motor.brake()
+                return
+            self._reverse_hold_until = 0
 
         error = state.target_speed - state.current_speed
         desired_pwm = self.current_pwm + self.kp * error
@@ -135,7 +145,7 @@ def correct_corner():
     if angle > 180:
         angle -= 360
     
-    if abs(90 + angle * state.clockwise) > 10:
+    if abs(90 + angle * state.clockwise) > 5:
         return
 
 
@@ -162,7 +172,7 @@ def correct_corridor():
 
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
-    if abs(state.compass_angle_relative) > 10:
+    if abs(state.compass_angle_relative) > 5:
         return
 
     #if curr_y > 50:    
