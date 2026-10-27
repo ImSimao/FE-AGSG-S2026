@@ -31,6 +31,15 @@ class CruiseControl:
         self.current_pwm = 0.0
 
     def update(self, dt):
+        # --- TEMP DIAGNOSTIC (timeline of target / speed / pwm) ---
+        self._diag_n = getattr(self, "_diag_n", 0) + 1
+        if self._diag_n >= 5:   # about every 500 ms
+            self._diag_n = 0
+            print("DIAG t=%d tgt=%.1f spd=%.1f pwm=%.2f steer=%d" % (
+                time.ticks_ms(), state.target_speed, state.current_speed,
+                self.current_pwm, Servo.current_angle))
+        # --- END TEMP DIAGNOSTIC ---
+
         # Target stopped: brake so the robot stops at the target instead of
         # coasting past it (the motor cannot creep below ~10 cm/s).
         if state.target_speed == 0:
