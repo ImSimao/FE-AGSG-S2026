@@ -56,6 +56,13 @@ class CruiseControl:
         elif desired_pwm < -1.0:
             desired_pwm = -1.0
 
+        # Keep the motor turning: below a small PWM static friction stops it.
+        # Apply the floor to the DESIRED pwm (not to current_pwm) so the
+        # acceleration rate limit still applies: otherwise the PWM jumps to the
+        # floor in one cycle and the robot jerks (and skids while turning).
+        if state.target_speed > 0 and desired_pwm < self.min_drive_pwm:
+            desired_pwm = self.min_drive_pwm
+
         # Rate-limit the change (acceleration / deceleration)
         delta = desired_pwm - self.current_pwm
 
@@ -75,11 +82,6 @@ class CruiseControl:
             self.current_pwm = 1.0
         elif self.current_pwm < -1.0:
             self.current_pwm = -1.0
-
-        # Keep the motor turning: below a small PWM the static friction stops it,
-        # so it would have to restart and waste time (and distance).
-        if state.target_speed > 0 and self.current_pwm < self.min_drive_pwm:
-            self.current_pwm = self.min_drive_pwm
 
         # Motor output: positive PWM drives forward, negative PWM applies
         # reverse torque (mild braking). This slows the robot down without
