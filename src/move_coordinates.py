@@ -11,9 +11,14 @@ from math import sin, cos
 ROTATE_TIMEOUT_MS = 8 * 1000
 MOVE_TIMEOUT_MS = 60 * 1000
 
-# Measured braking deceleration of the robot (cm/s^2). Used for the brake
-# anticipation: the robot needs v^2/(2a) cm to stop from speed v.
-BRAKE_DECEL = 120.0
+# Measured braking distance (cm) as a function of speed (cm/s):
+#   s(v) = BRAKE_DIST_INTERCEPT + BRAKE_DIST_SLOPE * v
+# It includes the ~50-100 ms cruise-control delay, so it is roughly linear
+# in v (the delay term v*t_delay dominates at high speed).
+BRAKE_DIST_INTERCEPT = 1.0
+BRAKE_DIST_SLOPE = 0.08
+
+STOP_SPEED = 1.0   # cm/s, below this the robot is considered stopped
 
 
 def get_angle_to_rotate(dest_x, dest_y):
@@ -199,11 +204,17 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         remaining_distance = L - x_prime
 
         
-        if remaining_distance < 0:
+        # Brake anticipation: the robot still travels s(v) cm after the stop
+        # command, so brake that early to stop exactly at the target.
+        brake_distance = BRAKE_DIST_INTERCEPT + BRAKE_DIST_SLOPE * abs(state.raw_speed)
+        if remaining_distance <= brake_distance or remaining_distance < 0:
             state.target_speed = 0
-            pid_y.reset()
             Servo.set_angle(0)
-            break
+            if abs(state.raw_speed) < STOP_SPEED:
+                pid_y.reset()
+                break
+            time.sleep(1/100)
+            continue
 
         if remaining_distance < desaccelerate_distance:
             state.target_speed = remaining_distance / desaccelerate_distance * (max_speed - min_speed) + min_speed

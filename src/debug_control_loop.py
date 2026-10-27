@@ -18,7 +18,10 @@ TARGET_CM = 200       # total distance to drive
 MAX_SPEED = 80        # cm/s (match move_coordinates; try 60 if needed)
 MIN_SPEED = 12        # cm/s at the end of the deceleration (motor cannot creep below ~12)
 DECEL_CM = 50         # start decelerating this far from the target
-BRAKE_DECEL = 120.0   # cm/s^2, braking deceleration used for the brake anticipation
+# Measured braking distance (cm): s(v) = 1.0 + 0.08 * v
+BRAKE_DIST_INTERCEPT = 1.0
+BRAKE_DIST_SLOPE = 0.08
+STOP_SPEED = 1.0      # cm/s, below this the robot is considered stopped
 
 def main():
     state.clockwise = 1  # <-- set to 1 or -1 for your field direction
@@ -39,10 +42,13 @@ def main():
         travelled = enc - start_enc
         remaining = TARGET_CM - travelled
 
-        if remaining <= 0:
-            break
-
-        if remaining < DECEL_CM:
+        brake_distance = BRAKE_DIST_INTERCEPT + BRAKE_DIST_SLOPE * abs(state.raw_speed)
+        if remaining <= brake_distance or remaining <= 0:
+            # Close enough: brake and wait for the robot to stop.
+            state.target_speed = 0
+            if abs(state.raw_speed) < STOP_SPEED:
+                break
+        elif remaining < DECEL_CM:
             state.target_speed = remaining / DECEL_CM * (MAX_SPEED - MIN_SPEED) + MIN_SPEED
         else:
             state.target_speed = MAX_SPEED
