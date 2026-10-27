@@ -22,7 +22,7 @@ LOOP_SLEEP_MS = 1
 class CruiseControl:
     """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/150, max_accel=1/2, max_decel=3.0, min_drive_pwm=0.15):
+    def __init__(self, kp=1/150, max_accel=0.425, max_decel=2.25, min_drive_pwm=0.15):
         self.kp = kp
         self.max_accel = max_accel   # max PWM increase per second
         self.max_decel = max_decel   # max PWM decrease per second
