@@ -18,7 +18,7 @@ TARGET_CM = 200       # total distance to drive
 MAX_SPEED = 80        # cm/s (match move_coordinates; try 60 if needed)
 MIN_SPEED = 12        # cm/s at the end of the deceleration (motor cannot creep below ~12)
 DECEL_CM = 50         # start decelerating this far from the target
-BRAKE_DECEL = 150.0   # cm/s^2, braking deceleration used for the brake anticipation
+BRAKE_DECEL = 120.0   # cm/s^2, braking deceleration used for the brake anticipation
 
 def main():
     state.clockwise = 1  # <-- set to 1 or -1 for your field direction

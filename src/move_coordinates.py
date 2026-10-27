@@ -13,7 +13,7 @@ MOVE_TIMEOUT_MS = 60 * 1000
 
 # Measured braking deceleration of the robot (cm/s^2). Used for the brake
 # anticipation: the robot needs v^2/(2a) cm to stop from speed v.
-BRAKE_DECEL = 150.0
+BRAKE_DECEL = 120.0
 
 
 def get_angle_to_rotate(dest_x, dest_y):
