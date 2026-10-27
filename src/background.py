@@ -20,21 +20,45 @@ LOOP_SLEEP_MS = 1
 
 
 class CruiseControl:
-    """Simple incremental proportional controller."""
+    """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/70):
+    def __init__(self, kp=1/70, max_accel=1/3, max_decel=2/3):
         self.kp = kp
+        self.max_accel = max_accel   # max PWM increase per second
+        self.max_decel = max_decel   # max PWM decrease per second
         self.current_pwm = 0.0
 
     def update(self, dt):
         error = state.target_speed - state.current_speed
-        self.current_pwm += self.kp * error
+        desired_pwm = self.current_pwm + self.kp * error
+
+        # Clamp the desired PWM to the valid range
+        if desired_pwm > 1.0:
+            desired_pwm = 1.0
+        elif desired_pwm < -1.0:
+            desired_pwm = -1.0
+
+        # Rate-limit the change (acceleration / deceleration)
+        delta = desired_pwm - self.current_pwm
+
+        if delta > 0:
+            max_delta = self.max_accel * dt
+        else:
+            max_delta = self.max_decel * dt
+
+        if delta > max_delta:
+            delta = max_delta
+        elif delta < -max_delta:
+            delta = -max_delta
+
+        self.current_pwm += delta
 
         if self.current_pwm > 1.0:
             self.current_pwm = 1.0
         elif self.current_pwm < -1.0:
             self.current_pwm = -1.0
 
+        # Motor output
         if self.current_pwm > 0:
             Motor.forward()
         elif self.current_pwm < 0:
