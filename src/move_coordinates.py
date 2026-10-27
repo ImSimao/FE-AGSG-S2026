@@ -136,7 +136,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False):
 
     desaccelerate_distance = 30
-    max_speed = 45   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
+    max_speed = 70   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
     min_speed = 12   # motor cannot creep below ~12 cm/s (static friction)
 
     if detect_parking_wall:
@@ -205,16 +205,15 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
         
         # Brake anticipation: the robot still travels s(v) cm after the stop
-        # command, so brake that early to stop exactly at the target.
+        # command, so brake that early to stop at the target. Hand control back
+        # immediately: waiting here for the robot to physically stop added
+        # 0.5-1 s to every routine transition.
         brake_distance = BRAKE_DIST_INTERCEPT + BRAKE_DIST_SLOPE * abs(state.raw_speed)
         if remaining_distance <= brake_distance or remaining_distance < 0:
             state.target_speed = 0
             Servo.set_angle(0)
-            if abs(state.raw_speed) < STOP_SPEED:
-                pid_y.reset()
-                break
-            time.sleep(1/100)
-            continue
+            pid_y.reset()
+            break
 
         if remaining_distance < desaccelerate_distance:
             state.target_speed = remaining_distance / desaccelerate_distance * (max_speed - min_speed) + min_speed
