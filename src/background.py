@@ -22,10 +22,11 @@ LOOP_SLEEP_MS = 1
 class CruiseControl:
     """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/70, max_accel=1/3, max_decel=2.0):
+    def __init__(self, kp=1/70, max_accel=1/3, max_decel=2.0, min_drive_pwm=0.15):
         self.kp = kp
         self.max_accel = max_accel   # max PWM increase per second
         self.max_decel = max_decel   # max PWM decrease per second
+        self.min_drive_pwm = min_drive_pwm  # min PWM that overcomes motor friction
         self.current_pwm = 0.0
 
     def update(self, dt):
@@ -57,6 +58,11 @@ class CruiseControl:
             self.current_pwm = 1.0
         elif self.current_pwm < -1.0:
             self.current_pwm = -1.0
+
+        # Keep the motor turning: below a small PWM the static friction stops it,
+        # so it would have to restart and waste time (and distance).
+        if state.target_speed > 0 and self.current_pwm < self.min_drive_pwm:
+            self.current_pwm = self.min_drive_pwm
 
         # Motor output: positive PWM drives forward, negative PWM applies
         # reverse torque (mild braking). This slows the robot down without
