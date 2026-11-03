@@ -134,7 +134,7 @@ def obstacle_challenge():
             
             if Field.lanes_sides()[1] == -1 and state.get_relative_odom[1] < 50 or Field.lanes_sides()[1] == 1 and state.get_relative_odom[1] > 50:
                 rotate_angle(-90*Field.lanes_sides()[1]*state.clockwise)
-                move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[1], True))
+                move_coordinates(state.get_relative_odom[0], get_traffic_lane_y(Field.lanes_sides()[1], reverse=True, rotate=False))
                 rotate_angle(0)
 
         move_coordinates((State.inner_wall/2) + (State.outer_wall/2), get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)

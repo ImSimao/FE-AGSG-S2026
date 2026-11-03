@@ -136,7 +136,7 @@ def rotate_angle(angle, reverse = False):
 def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_parking_wall = False, stop_when = None):
 
     desaccelerate_distance = 30
-    max_speed = 70   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
+    max_speed = 50   # below the motor limit (~50 cm/s at 500 RPM) to avoid saturation/slip
     min_speed = 12   # motor cannot creep below ~12 cm/s (static friction)
 
     if detect_parking_wall:
@@ -268,7 +268,7 @@ def target_in_right_rotation_area(xr, yr, theta, xt, yt, radius):
     xc, yc = circle_center_right(xr, yr, theta, radius)
     return is_inside_circle(xt, yt, xc, yc, radius)
 
-def target_in_rotation_area(xt, yt, radius=30):
+def target_in_rotation_area(xt, yt, radius=35):
     xr, yr = state.get_relative_odom
     theta = math.radians(state.compass_angle_relative)
 

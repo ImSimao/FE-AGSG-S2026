@@ -15,7 +15,7 @@ CAMERA_INTERVAL_MS    = 20    # 50 Hz (matches the ~30-60 FPS camera frame rate)
 ODOM_INTERVAL_MS      = 10    # 100 Hz
 SPEED_INTERVAL_MS     = 100   # 10 Hz
 TELEMETRY_INTERVAL_MS = 50    # 20 Hz
-ADJUST_ODOM_INTERVAL_MS = 200 # 5 Hz
+ADJUST_ODOM_INTERVAL_MS = 25  # 40 Hz
 LOOP_SLEEP_MS = 1
 
 # How long to hold the brake when the requested direction is opposite to the
@@ -134,37 +134,85 @@ def _adjust_odometry():
     correct_corridor()
     correct_corner()
 
+def update_odom(x_relative, y_relative):
+    #Send all in 1 message:
+    y_offset = abs(y_relative - state.get_relative_odom[1])
+    x_offset = abs(x_relative - state.get_relative_odom[0])
+
+    max_offset = 20
+
+    if y_offset > max_offset or x_offset > max_offset:
+        Telemetry.log("Skipping odom update because y_offset or x_offset is greater than 10 or 15")
+        Telemetry.log("y_offset: " + str(y_offset) + " | x_offset: " + str(x_offset))
+        return
+
+    Telemetry.log("Previous odom: " + str(state.get_relative_odom[0]) + ", " + str(state.get_relative_odom[1]) + " | Updating relative odom to: " + str(x_relative) + ", " + str(y_relative) + " | Distance offset: " + str(x_relative - state.get_relative_odom[0]) + ", " + str(y_relative - state.get_relative_odom[1]))
+
+    state.set_relative_odom(x_relative, y_relative)
+
 def correct_corner():
     curr_x, curr_y = state.get_relative_odom
 
-    if curr_x > 90:
-        return
+    if curr_x > 90 and curr_y > 90:
+            return
 
     angle = state.compass_angle_relative
 
     if angle > 180:
         angle -= 360
     
-    if abs(90 + angle * state.clockwise) > 5:
-        return
+    if abs(90 + angle * state.clockwise) < 10 or abs(-90 + angle * state.clockwise) < 10:
 
-
-    distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
-
-
-    if distance_front > 80 or distance_front <= 6:
-        return
-
-    if state.clockwise == 1:
-        if distance_left > 80 or distance_left <= 6:
+        #Entered corner from inside
+        if curr_x > 60 and curr_y > 40:
             return
 
-        state.set_relative_odom(distance_left + 2.55, distance_front)
-    else:
-        if distance_right > 80 or distance_right <= 6:
+        if curr_x < 25:
             return
 
-        state.set_relative_odom(distance_right + 2.55, distance_front)
+        distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
+
+
+        if distance_front > 55 or distance_front <= 3:
+            return
+
+        if state.clockwise == 1:
+            if distance_left > 80 or distance_left <= 3:
+                return
+
+            update_odom(distance_left, distance_front)
+        else:
+            if distance_right > 80 or distance_right <= 3:
+                return
+
+            update_odom(distance_right, distance_front)
+
+
+
+        if abs(angle * state.clockwise) < 10:
+
+            distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
+
+
+            if distance_rear > 55 or distance_rear <= 3:
+                return
+
+             #Entered corner from inside
+            if curr_x > 60 and curr_y > 40:
+                update_odom(distance_rear, curr_y)
+                return
+
+
+            if state.clockwise == 1:
+                if distance_left > 50 or distance_left <= 3:
+                    return
+
+                update_odom(distance_rear, distance_left)
+            else:
+                if distance_right > 50 or distance_right <= 3:
+                    return
+
+                update_odom(distance_rear, distance_right)
 
 
 def correct_corridor():
@@ -172,7 +220,13 @@ def correct_corridor():
 
     distance_left, distance_right, distance_front, distance_rear = get_odom_side_sonar()
 
-    if abs(state.compass_angle_relative) > 5:
+    angle = state.compass_angle_relative
+
+    if angle > 180:
+        angle -= 360
+
+
+    if abs(state.compass_angle_relative) > 10:
         return
 
     #if curr_y > 50:    
@@ -184,27 +238,27 @@ def correct_corridor():
 
     if state.is_lane_with_parking:
         if curr_y < 62:
-            if state.clockwise == 1 and curr_x < 150:
+            if state.clockwise == 1 and curr_x < 140:
                 return
-            if state.clockwise == -1 and curr_x > 150:
+            if state.clockwise == -1 and curr_x > 140:
                 return
             
 
     if curr_y < 50 and state.clockwise == 1 or curr_y > 50 and state.clockwise == -1:
-        if distance_left > 50 or distance_left <= 6:
+        if distance_left > 50 or distance_left <= 3:
             return
 
-        offset = distance_left + 2.55
+        offset = distance_left
 
 
-        state.set_relative_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
+        update_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
     else:
-        if distance_right > 50 or distance_right <= 6:
+        if distance_right > 50 or distance_right <= 3:
             return
 
-        offset = distance_right + 2.55
+        offset = distance_right
 
-        state.set_relative_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
+        update_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
 
 def get_abs_distance(sonar_offset, angle, distance, is_side = False):
 
