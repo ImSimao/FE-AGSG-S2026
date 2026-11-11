@@ -35,9 +35,10 @@ I'm a hardworking, goal-oriented young man. Challenges captivate me and the hard
 1. [Introduction](#1-introduction)
 2. [Vehicle Hardware](#2-vehicle-hardware)
 3. [Software Architecture](#3-software-architecture)
-4. [Build and Upload](#4-build-and-upload)
-5. [Repository Structure](#5-repository-structure)
-6. [Reproducibility](#6-reproducibility)
+4. [Simulator (firmware-in-the-loop)](#4-simulator-firmware-in-the-loop)
+5. [Build and Upload](#5-build-and-upload)
+6. [Repository Structure](#6-repository-structure)
+7. [Reproducibility](#7-reproducibility)
 
 ---
 
@@ -181,7 +182,24 @@ A sign position is never trusted the moment the camera first sees it: the robot 
 
 The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the help of this guide: <https://youtu.be/4Y7zG48uHRo>.
 
-## 4. Build and Upload
+## 4. Simulator (firmware-in-the-loop)
+
+To validate the navigation code without burning track time, we built a **firmware-in-the-loop simulator**. A browser UI owns the world (arena, walls, traffic signs, parking bay and Ackermann physics), while a Python process runs the **exact MicroPython firmware** from `firmware/agsg/` under CPython through a small hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A change to `firmware/agsg/` changes the next simulated round with no porting step: the same `obstacle_challenge()` state machine that drives the virtual car drives the real one.
+
+The simulator is used to:
+
+- **Score every change** — each round is timed and scored with the official WRO FE 2026 table (max 62). The seed fixes both the sign layout and the start direction, so two firmware versions are compared on the exact same track.
+- **Measure fidelity as a number** — the firmware's own odometry is compared with the world's true pose every frame; the measured error is **2–8 cm over an 8 m run**, which is how we know the units, signs and frames are correct.
+- **Sweep sign layouts** — `tools/sign_sweep.py` runs one round per sign pattern (53 layouts) to find cases the firmware cannot handle (40/53 currently score 62).
+- **Report safety margins** — `tools/margin_report.py` rebuilds the car body at every trajectory step and reports the clearance to each wall and sign.
+- **Audit MicroPython portability** — `tools/mpy_audit.py` flags CPython-only stdlib calls (`os.environ`, `math.hypot`) that import fine in the simulator but crash on the board.
+- **Run headless** — `python -m simulator.race_run --runs N` runs N rounds unattended and leaves the score breakdown and a screenshot, so a firmware change is judged by its score, not by hand.
+
+Bench calibration (`simulator/calibrate.py` + `firmware/bench/bench_turn_radius.py`) closes the loop between sim and car: by driving fixed servo angles on the floor and measuring the turn radius, we fit the real steering gain and offset and feed them back into the simulator.
+
+Full details and current measured results: [`SIMULATOR.md`](SIMULATOR.md) and [`FIRMWARE_NOTES.md`](FIRMWARE_NOTES.md).
+
+## 5. Build and Upload
 
 All firmware is flashed with **MicroPython**:
 
@@ -193,7 +211,7 @@ All firmware is flashed with **MicroPython**:
 
 The only external dependency is the `bno08x.py` driver, which is included in the repository.
 
-## 5. Repository Structure
+## 6. Repository Structure
 
 ```
 ├── models/          # CAD / 3D-printable and CNC files
@@ -219,6 +237,6 @@ The only external dependency is the `bno08x.py` driver, which is included in the
 └── FIRMWARE_NOTES.md  # firmware findings
 ```
 
-## 6. Reproducibility
+## 7. Reproducibility
 
 To reproduce this vehicle, another team needs the hardware listed in §2.1, the wiring diagram in `schemes/`, the CAD files in `models/`, and the source code in `firmware/agsg/`. The README and code comments document the module responsibilities and the build/upload process, so the robot can be rebuilt and the software re-flashed from this repository alone.

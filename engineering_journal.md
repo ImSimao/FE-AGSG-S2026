@@ -30,7 +30,8 @@
    - [4.7 Traffic-sign detection and passing](#47-traffic-sign-detection-and-passing)
    - [4.8 Noise handling](#48-noise-handling)
    - [4.9 Testing, tuning and validation](#49-testing-tuning-and-validation)
-   - [4.10 Edge cases](#410-edge-cases)
+   - [4.10 Simulator (firmware-in-the-loop)](#410-simulator-firmware-in-the-loop)
+   - [4.11 Edge cases](#411-edge-cases)
 5. [Systems Thinking & Engineering Decisions](#5-systems-thinking--engineering-decisions)
    - [5.1 Constraints](#51-constraints)
    - [5.2 Key trade-offs and decisions](#52-key-trade-offs-and-decisions)
@@ -344,7 +345,24 @@ The encoder signal is the most sensitive part of the system. The motor produces 
 - **Steering limits** — the maximum steering offset was set to the **largest value that does not strain the servo**.
 - **Validation** — we validate with long runs (e.g. **10 consecutive laps**) and require them to never fail; we drive the robot to known coordinates and **measure** the reached position to confirm accuracy; and we measure the **final position error when running on odometry alone** (without the sonar corrections) to quantify the drift.
 
-### 4.10 Edge cases
+### 4.10 Simulator (firmware-in-the-loop) and validation
+
+Rather than guessing whether a firmware change helps, we built a **firmware-in-the-loop simulator** so every change is scored by the same WRO 2026 table the judges use. Before it, a change was judged "feels better" after a few manual runs; now it is judged by its score, lap time, odometry error and wall/sign margin, on a reproducible track.
+
+**Design decision — run the real firmware, not a reimplementation.** The simulator does not port the control code to Python; it runs the actual `firmware/agsg/` MicroPython under CPython through a hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A bug fixed in `firmware/agsg/` is fixed in the next simulated round with no porting step. A reimplementation would only prove a copy works — it would never prove the car works.
+
+**Fidelity is measured, not assumed.** The "Erro odometria" tile compares the firmware's own `state.odom` against the world's true pose every frame; the median error is **2.8 cm** and the maximum per round **6.9 cm**. That number is the proof that the units, signs and coordinate frames are correct — exactly where such integrations usually fail silently.
+
+**Reproducibility.** The seed fixes the sign layout and the start direction, and a run is a pure function of the world the firmware sees (lock-step physics: the world advances only when the firmware blocks in a sleep). Two firmware versions are therefore compared on the same track, at 1×/2×/4× speed.
+
+**What it found.** The simulator has already caught real defects, documented with evidence in `FIRMWARE_NOTES.md`:
+- a sign-convention contradiction between the odometry and the camera zones (the heading and the traffic table used opposite rotation conventions, so no IMU sign made both work);
+- `os.environ` and `math.hypot`, which exist in CPython but not in MicroPython, and killed two rounds on the board (now caught before flashing by `tools/mpy_audit.py`);
+- a steering-sign bug in the shim that looked exactly like "the firmware turns into the wall".
+
+**Current measured results** (see `SIMULATOR.md`): the firmware scores **62/62** on several seeds and on **40 of 53** sign layouts, with the parking manoeuvre the most fragile part (it lands in 1.8.2 / 1.8.3 / zero depending on the draw).
+
+### 4.11 Edge cases
 
 - **Traffic sign not yet seen / ambiguous** — the robot keeps searching and re-confirming the sign until it is sure of its colour, or sure that the position is empty (point-of-view threshold).
 - **Invalid sonar reading (−1)** — handled by the framed protocol and by ignoring out-of-range values in the correction logic.
