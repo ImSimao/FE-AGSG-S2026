@@ -359,12 +359,12 @@ Rather than guessing whether a firmware change helps, we built a **firmware-in-t
 
 **Reproducibility.** The seed fixes the sign layout and the start direction, and a run is a pure function of the world the firmware sees (lock-step physics: the world advances only when the firmware blocks in a sleep). Two firmware versions are therefore compared on the same track, at 1×/2×/4× speed.
 
-**What it found.** The simulator has already caught real defects, documented with evidence in `FIRMWARE_NOTES.md`:
+**What it found.** The simulator has already caught real defects:
 - a sign-convention contradiction between the odometry and the camera zones (the heading and the traffic table used opposite rotation conventions, so no IMU sign made both work);
 - `os.environ` and `math.hypot`, which exist in CPython but not in MicroPython, and killed two rounds on the board (now caught before flashing by `src/simulator/tools/mpy_audit.py`);
 - a steering-sign bug in the shim that looked exactly like "the firmware turns into the wall".
 
-**Current measured results** (see `SIMULATOR.md`): the firmware scores **62/62** on several seeds and on **40 of 53** sign layouts, with the parking manoeuvre the most fragile part (it lands in 1.8.2 / 1.8.3 / zero depending on the draw).
+**Current measured results** (see `src/simulator/README.md`): the firmware scores **62/62** on several seeds and on **40 of 53** sign layouts, with the parking manoeuvre the most fragile part (it lands in 1.8.2 / 1.8.3 / zero depending on the draw).
 
 ### 4.11 Edge cases
 

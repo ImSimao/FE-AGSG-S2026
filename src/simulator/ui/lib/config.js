@@ -38,8 +38,8 @@ export const defaultConfig = {
   startMode: "wall",
   // "auto" draws the direction (rules), "cw" or "ccw" force it (?dir=ccw).
   // Default is "ccw" (car facing east in the bottom straight) because the
-  // firmware's clockwise boot sequence diverges geometrically in this world -
-  // see FIRMWARE_NOTES.md, issue 1. Use ?dir=cw to reproduce it.
+  // firmware's clockwise boot sequence diverges geometrically in this world.
+  // Use ?dir=cw to reproduce it.
   startDirection: "cw", // anti-clockwise is not ready yet: clockwise only for now
   seed: null, // ?seed=1234 fixes the track for comparable runs
   startPose: null, // ?pose=x_cm,y_cm,heading overrides the start pose (test hook)

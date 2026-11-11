@@ -177,8 +177,7 @@ export function getParkingSpot() {
   // Fixed at the right-hand end of the starting section, for both driving
   // directions (coach's call: one bay to practise in, not two). The firmware
   // instead assumes the bay mirrors with the direction (105 cm clockwise,
-  // 160 cm otherwise), so the clockwise start is far off its own anchor -
-  // see FIRMWARE_NOTES.md.
+  // 160 cm otherwise), so the clockwise start is far off its own anchor.
   //
   // The right magenta element sits right next to the dotted line, so the free
   // area ends one element thickness before x = 2.00; the returned rectangle is
@@ -254,7 +253,7 @@ export function collidesWithAnything(pose) {
   if (collidesWithParkingWalls(pose)) return "parking wall";
   // Traffic signs do NOT block: rule 9.20 allows touching, moving or knocking
   // them down. It costs points (1.4 / 1.6), so the race module records contact
-  // instead of stopping the car. See FIRMWARE_NOTES.md.
+  // instead of stopping the car.
   return null;
 }
 

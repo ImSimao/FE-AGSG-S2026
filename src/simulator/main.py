@@ -88,7 +88,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     type=float,
     default=-1.0,
     choices=[1.0, -1.0],
-    help="Firmware heading sign vs world heading. -1 keeps its odometry consistent (2-25 cm); +1 makes the camera POV work but mirrors the odometry - see FIRMWARE_NOTES.md",
+    help="Firmware heading sign vs world heading. -1 keeps its odometry consistent (2-25 cm); +1 makes the camera POV work but mirrors the odometry.",
   )
   parser.add_argument(
     "--imu-offset-deg",

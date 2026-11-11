@@ -197,7 +197,7 @@ The simulator is used to:
 
 Bench calibration (`src/simulator/calibrate.py` + `src/robot/bench/bench_turn_radius.py`) closes the loop between sim and car: by driving fixed servo angles on the floor and measuring the turn radius, we fit the real steering gain and offset and feed them back into the simulator.
 
-Full details and current measured results: [`SIMULATOR.md`](SIMULATOR.md) and [`FIRMWARE_NOTES.md`](FIRMWARE_NOTES.md).
+Full details and current measured results: [`src/simulator/README.md`](src/simulator/README.md).
 
 ## 5. Build and Upload
 
@@ -232,9 +232,7 @@ The only external dependency is the `bno08x.py` driver, which is included in the
 │       └── start_ui.py  # start the UI
 ├── t-photos/        # team photos
 ├── v-photos/        # vehicle photos (all sides, top, bottom)
-├── video/           # link to the driving-demonstration video
-├── SIMULATOR.md     # simulator documentation
-└── FIRMWARE_NOTES.md  # firmware findings
+└── video/           # link to the driving-demonstration video
 ```
 
 ## 7. Reproducibility
