@@ -45,7 +45,7 @@ ninety_degrees_distance_offset = 16 # 16.5
 traffic_lane_center = (state.outer_wall - state.inner_wall) / 4
 traffic_lane_y_offset = 28 #26.25
 traffic_lane_y_parking = 11.5
-firt_obstacle_camera_coord = (100, traffic_lane_center)
+first_obstacle_camera_coord = (100, traffic_lane_center)
 second_obstacle_camera_coord = (200, traffic_lane_center)
 first_traffic_lane_camera_x = 152
 parking_gap = 30
@@ -166,8 +166,8 @@ def _bay_swing(degrees, lock, forward=True, speed=12, lead=0.0):
     lag (~30 ms): without it a 3 deg swing coasted to 4-9 deg.
     """
     start = state.compass_angle_relative
-    Telemetry.log("baia: swing %.0f graus, lock %+d, %s, de h=%.0f"
-                  % (degrees, lock, "frente" if forward else "tras", start))
+    Telemetry.log("bay: swing %.0f deg, lock %+d, %s, from h=%.0f"
+                  % (degrees, lock, "forward" if forward else "reverse", start))
     # Command the swing once, then poll the compass tightly and stop the instant
     # it reaches the target (minus the lead).
     Servo.set_angle(lock * Servo._MAX_STEERING_OFFSET)
@@ -183,7 +183,7 @@ def _bay_swing(degrees, lock, forward=True, speed=12, lead=0.0):
         time.sleep(1/200)
     state.target_speed = 0
     Servo.set_angle(0)
-    Telemetry.log("baia: swing fim h=%.0f (%+.0f), odom=%s"
+    Telemetry.log("bay: swing end h=%.0f (%+.0f), odom=%s"
                   % (state.compass_angle_relative,
                      _angdiff(state.compass_angle_relative, start), state.get_relative_odom))
     time.sleep(0.05)
@@ -239,7 +239,7 @@ def obstacle_challenge():
         # "end of lap 3" pose: ?pose=216,43,180 (physical x=216, y=43, facing
         # west). The odom mirrors x for cw: 303 - 216 = 87.
         state.set_relative_odom(87 if state.clockwise == 1 else 216, 43)
-        Telemetry.log("TEST_PARKING: a saltar para o estacionamento (cw=%d)" % state.clockwise)
+        Telemetry.log("TEST_PARKING: skipping to parking routine (cw=%d)" % state.clockwise)
     else:
         searched_traffic_sign = False
 
@@ -301,7 +301,7 @@ def obstacle_challenge():
     
             if not Field.can_enter_lane():
                 #search for colour
-                Telemetry.log("busca: secção sem cor na zona 0/1 odom=(%.0f,%.0f) zonas=%s t=%d"
+                Telemetry.log("search: section with no colour in zone 0/1 odom=(%.0f,%.0f) zones=%s t=%d"
                               % (state.get_relative_odom[0], state.get_relative_odom[1],
                                  "".join({"RED": "R", "GREEN": "G"}.get(str(s),
                                           ".") for z in Field.LANES[state.relative_lane].zones
@@ -313,7 +313,7 @@ def obstacle_challenge():
             
                 rotate_angle(0, reverse=True)
                 
-                rotate_coordinates(firt_obstacle_camera_coord[0], firt_obstacle_camera_coord[1] if not state.is_lane_with_parking else 60)
+                rotate_coordinates(first_obstacle_camera_coord[0], first_obstacle_camera_coord[1] if not state.is_lane_with_parking else 60)
             
                 # Search forward in one continuous move and stop as soon as the
                 # camera detects the lane opening (no more 10 cm hops with a stop
@@ -380,7 +380,7 @@ def obstacle_challenge():
                                        second_obstacle_camera_coord[1])
                 
                     start_time = time.ticks_ms()
-                    Telemetry.log("espera cor de saida odom=(%.0f,%.0f) zonas=%s t=%d"
+                    Telemetry.log("waiting for exit colour odom=(%.0f,%.0f) zones=%s t=%d"
                                   % (state.get_relative_odom[0], state.get_relative_odom[1],
                                      "".join({"RED": "R", "GREEN": "G"}.get(str(s), ".")
                                              for z in Field.LANES[state.relative_lane].zones
@@ -392,7 +392,7 @@ def obstacle_challenge():
 
                         if time.ticks_ms() - start_time > 3000:
                             break
-                    Telemetry.log("espera terminou apos %d ms, zonas=%s t=%d"
+                    Telemetry.log("wait ended after %d ms, zones=%s t=%d"
                                   % (waited,
                                      "".join({"RED": "R", "GREEN": "G"}.get(str(s), ".")
                                              for z in Field.LANES[state.relative_lane].zones
@@ -516,7 +516,7 @@ def obstacle_challenge():
     # centre there is more room on the left, so rotate left (+1) and let the
     # nose swing into the open side.
     rotate_right_to_park = 1 if physical_x > 183 else -1
-    Telemetry.log("baia: decide odom_x=%.1f phys=%.1f -> rotate_right_to_park=%+d" %
+    Telemetry.log("bay: decide odom_x=%.1f phys=%.1f -> rotate_right_to_park=%+d" %
                   (rel_x, physical_x, rotate_right_to_park))
 
 
@@ -545,7 +545,7 @@ def obstacle_challenge():
     # same frame it is measured. No absolute offset is added: the entry already
     # sits at the finishing x.
     x_ref = (State.outer_wall - state.get_relative_odom[0]) if state.clockwise == 1 else state.get_relative_odom[0]
-    Telemetry.log("baia: recenter x_ref=%.1f" % x_ref)
+    Telemetry.log("bay: recenter x_ref=%.1f" % x_ref)
 
     while True:
         _bay_swing(3, -rotate_right_to_park, forward=True)

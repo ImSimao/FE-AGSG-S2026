@@ -236,7 +236,7 @@ class Field:
         # stopping to look for colours it has already seen.
         lane.clear_last_zone()
         if lane.restore_learned():
-            Telemetry.log("faixa %d: linha memorizada %s" % (state.relative_lane, lane.learned))
+            Telemetry.log("lane %d: line memorised %s" % (state.relative_lane, lane.learned))
 
     @staticmethod
     def remember_lane(sides):

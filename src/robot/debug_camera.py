@@ -15,8 +15,8 @@ state.set_relative_odom(150, 60)
 
 Camera.initialize(uart_id=1, rx_pin=9)
 
-print("Debug camera iniciado")
-print("Posicao simulada: x=150 y=60 | clockwise=1")
+print("Debug camera started")
+print("Simulated position: x=150 y=60 | clockwise=1")
 
 last_key = None
 heartbeat = 0
@@ -36,14 +36,14 @@ while True:
             for cx, cy, color in blobs:
                 print("Blob: cx={} cy={} {}".format(cx, cy, color))
         else:
-            print("Sem detecoes")
+            print("No detections")
 
         if pov:
             for p in pov:
-                print("  POV pos={} lado={} ang={:.1f} dist={:.1f}".format(
+                print("  POV pos={} side={} ang={:.1f} dist={:.1f}".format(
                     p["pos"], p["side"], p["angle"], p["distance"]))
 
-        print("Zonas:", zones)
+        print("Zones:", zones)
         print("---")
 
     time.sleep_ms(1000)

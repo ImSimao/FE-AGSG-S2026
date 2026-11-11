@@ -100,7 +100,7 @@ def rotate_coordinates(dest_x, dest_y, reverse = False):
     # here, which is why get_angle_to_rotate negates it.
     heading = bearing if state.clockwise == 1 else -bearing
     rotate_angle(heading, reverse)
-    _trace_end("rotate_coords", "alinhado")
+    _trace_end("rotate_coords", "aligned")
 
 
 def rotate_angle(angle, reverse = False):
@@ -268,7 +268,7 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
             if state.clockwise == 1 and (state.get_relative_odom[1] - Distance.get_left()) > 10  or state.clockwise == -1 and (state.get_relative_odom[1] - Distance.get_right()) > 10:
                 state.target_speed = 0
                 Servo.set_angle(0)
-                _trace_end("move", "parede do estacionamento")
+                _trace_end("move", "parking wall")
                 break
 
         Servo.set_angle(servo_angle*state.clockwise)
