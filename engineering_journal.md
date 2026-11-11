@@ -3,6 +3,7 @@
 
 **Team:** AGSG (Portugal) — Joana Silva, Simão Freire
 **Coach:** Tiago Severino
+**Version:** 1.0.0 · **Date:** 2026-11-11 · **Commit:** `93a9142`
 
 ---
 
@@ -237,7 +238,9 @@ The two L7805CV linear regulators waste ~55% of the input power as heat (11 V �
 | Camera | **OpenMV H7 R1** | traffic-sign colour detection | boots instantly, onboard colour detection, streams detections over UART (replaced a Raspberry Pi Zero + Pi Camera, whose boot was too slow) |
 | Encoder | **quadrature encoder on the N20 motor** | odometry (distance) | provides the distance travelled |
 
-**Placement:** the four sonars point forward, backward, left and right; the camera faces forward to see the traffic signs; the IMU is mounted on the chassis so its axes align with the vehicle.
+**Placement:** the four sonars point forward, backward, left and right; the IMU is mounted on the chassis so its axes align with the vehicle.
+
+**Camera placement.** The OpenMV is mounted **forward, 10.18 cm above the floor, with the optical axis pitched 8.3° below horizontal**. The height is the parking-measurement height (below the track wall, §2.1), so the camera keeps the same sign in view across the whole approach. The 8.3° pitch keeps a 5 cm sign visible while it is being passed without losing the far end of the lane. The vertical focal is 315 px at QVGA (339 px lateral); the 10.18 cm height, the 8.3° pitch and the focals were solved from two bench points, and a 15 cm sign at 37 cm reads (y=37.4, h=15.0) while a 10 cm sign at 60 cm reads (y=57.5, h=10.4), both within ±2 cm.
 
 **Sonar orientation:** the front, left and right sonars are mounted **vertically** — their wider field of view in the vertical plane gives more reliable readings while driving (we tested that vertical reads better than horizontal in motion). Only the **rear** sonar is horizontal, due to lack of space.
 
@@ -245,7 +248,8 @@ The two L7805CV linear regulators waste ~55% of the input power as heat (11 V �
 
 - **Encoder** — the quadrature signal is debounced in software (a **dynamic debounce** whose window scales with speed) because the motor produces electrical noise (see §4).
 - **IMU** — uses the game rotation vector, so no compass calibration is required; the yaw reference is set at the start of a run.
-- **Sonar** — the four sensors are measured **sequentially** to avoid cross-talk between them (see §4).
+- **Sonar** — the four sensors are fired **concurrently** (one 10 µs trigger to all four, then four echoes measured in parallel) for throughput; `SonarSlave/debug.py` prints the concurrent and sequential distances side by side, so any cross-talk between sensors is visible (see §4).
+- **Camera** — bench-calibrated against two points: a 15 cm sign at 37 cm reads (y=37.4, h=15.0) and a 10 cm sign at 60 cm reads (y=57.5, h=10.4). The focal (315 px vertical, 339 px lateral), the 10.18 cm height and the 8.3° pitch were solved from those points; a 32 cm point was rejected as geometrically incompatible with the other two.
 
 ### 3.5 Gyro evaluation
 
@@ -362,11 +366,11 @@ The filter keeps a covariance (`P`), so the correction strength adapts to the cu
 
 ### 4.7 Traffic-sign detection and passing
 
-The OpenMV runs a colour-blob detector that finds the red and green pillars and streams one line per frame (`CAM:cx,cy,COLOR`). The main controller:
+The OpenMV runs a colour-blob detector, then converts each blob to the sign's **position and height in centimetres** in the camera frame, and streams one line per frame `CAM:x,y,h,COLOR` (x lateral + right, y forward, h sign height; `CAM:` when nothing is seen). The main controller:
 
-1. computes which field positions are currently inside the camera's field of view (`get_traffic_lane_inside_pov`),
-2. maps each detected blob to the matching field position (`get_colour_position`),
-3. records the colour in the field model (`Field.set_signal`) and accumulates the point-of-view time.
+1. turns each detection into an absolute field position — `x_field = x_camera + y·cos θ + x·sin θ` and `y_field = y_camera + y·sin θ − x·cos θ`, with θ the heading and the camera 10.5 cm ahead of the odometry origin — and keeps only detections **within 5 cm** of a known sign position;
+2. records the colour in the field model (`Field.set_signal`) and accumulates the point-of-view time;
+3. inverts the colour when the height says the sign is a modified 5 cm or 15 cm one (the Surprise Rule), so the passing side follows the original colour.
 
 The state machine then reads the field model (`can_enter_lane`, `can_exit_lane`, `lanes_sides`) and **adjusts the trajectory** so the robot passes each pillar on the correct side (green left, red right).
 
@@ -423,7 +427,7 @@ Rather than guessing whether a firmware change helps, we built a **firmware-in-t
 
 - **Traffic sign not yet seen / ambiguous** — the robot keeps searching and re-confirming the sign until it is sure of its colour, or sure that the position is empty (point-of-view threshold).
 - **Invalid sonar reading (−1)** — handled by the framed protocol and by ignoring out-of-range values in the correction logic.
-- **Odometry drift** — corrected by the sonar-based `corrigir_corredor` / `corrigir_canto`.
+- **Odometry drift** — corrected by the sonar-based `correct_corridor()` / `correct_corner()`.
 - **Rotation / movement getting stuck** — every rotation and movement has a timeout, after which the robot stops and falls back.
 - **UART desynchronisation** — the sonar and camera parsers re-synchronise on the header/line and drop garbage.
 
@@ -445,8 +449,8 @@ This section records the constraints, trade-offs and iterations that shaped the 
 **1. Threads (`_thread`) vs `uasyncio`**
 We first migrated the control loop to `uasyncio` for cleaner code, but the cooperative scheduler introduced timing jitter that degraded the driving. We **reverted to `_thread`** (two real cores), accepting the extra care needed for shared state in exchange for deterministic timing.
 
-**2. Sonar measurement — concurrent vs sequential**
-Measuring all four sonars at once caused **cross-talk** (echoes from one sensor being read by another). We switched to **sequential measurement**, accepting a lower update rate in exchange for clean readings.
+**2. Sonar firing — concurrent, with a cross-talk check**
+We fire all four sonars **concurrently** — one 10 µs trigger to all four, then measure the four echoes in parallel — because it keeps the update rate high. Concurrent firing risks **cross-talk** (one sensor's echo picked up by another), so `SonarSlave/debug.py` prints the concurrent and sequential distances side by side and flags where they disagree.
 
 **3. Encoder debounce — fixed vs dynamic**
 A fixed debounce could not handle both fast and slow speeds: at low speed the real edges are sparse and the noise dominates. We implemented a **dynamic debounce** whose window scales with the current speed, and we also raised the **PWM to 20 kHz** to move the noise source above the encoder band. These two changes together fixed the encoder over-counting.
@@ -474,14 +478,14 @@ We first used a micro 9g SG90 servo, but its gears broke — both the plastic-ge
 
 ### 5.3 Iteration history
 
-The development is recorded in the git history (68 commits). Key iterations, aligned with the real commits:
+The development is recorded in the git history (169 commits at the time of writing). Key iterations, aligned with the real commits:
 
 | Change | Trigger / problem | Commit |
 |--------|-------------------|--------|
 | baseline drive + encoder | first running prototype | initial commits |
 | `uasyncio` control loop | cleaner code | `7a2725a` |
 | revert to `_thread` | `uasyncio` scheduling jitter degraded driving | `153aaeb` |
-| sequential sonar measurement | cross-talk between sonars | `13910c0` |
+| concurrent sonar firing + debug tool | throughput; cross-talk check | `13910c0` |
 | 20 kHz motor PWM | encoder over-counting from motor noise | `40c1fe2` |
 | dynamic encoder debounce | noise dominates at low speed | `9d59c39` |
 | cruise-control reversal guard | motor reversing during deceleration | `f966934` |
@@ -493,7 +497,7 @@ Each change is a measured fix: the trigger (jitter, cross-talk, over-counting, r
 | Failure mode | Effect | Mitigation |
 |--------------|--------|------------|
 | Encoder noise (motor) | wrong odometry | 20 kHz PWM, dynamic debounce, separated power rails |
-| Sonar cross-talk | wrong distances | sequential measurement |
+| Sonar cross-talk | wrong distances | concurrent firing + `SonarSlave/debug.py` comparison |
 | Motor reversing on deceleration | wrong direction | cruise-control guard |
 | Traffic-sign misdetection | wrong passing side | colour thresholds + region filtering on OpenMV |
 | UART desync (sonar) | corrupted distances | framed protocol with header + checksum |

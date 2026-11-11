@@ -152,7 +152,7 @@ The sonar slave (Pico 1) reads the four SRF04 ultrasonic sensors and transmits t
 
 ### 3.4 Camera (`src/robot/Camera/`)
 
-The OpenMV H7 runs a colour-blob detector that finds the red and green traffic signs in the image and streams `CAM:<cx>,<bottom_y>,<COLOR>` lines over UART. The main controller maps each detection to the corresponding traffic-sign position on the field.
+The OpenMV H7 runs a colour-blob detector, converts each blob to the sign's position and height in centimetres, and streams `CAM:x,y,h,COLOR` lines over UART (x lateral + right, y forward, h sign height). The main controller turns each detection into an absolute field position and matches it to the nearest known sign position within 5 cm.
 
 ### 3.5 Concurrency and real-time control
 
