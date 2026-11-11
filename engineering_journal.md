@@ -114,7 +114,7 @@ The drivetrain is built from:
 | Wheelbase | 70 mm | steering radius R = L / tan(δ) |
 | Steering arm offset | 10 mm | |
 
-**Full CAD model**, the complete design (parts and assemblies) is available in the [Onshape document](https://cad.onshape.com/documents/e064973258882f3797ca66b3/w/e97523327652e311225f2991/e/db3f49a87a84e425faee13c2). The robot's side profile with dimensions is in [`models/robot_profile.pdf`](models/robot_profile.pdf).
+**Full CAD model**, the complete design (parts and assemblies) is available in the [Onshape document](https://cad.onshape.com/documents/e064973258882f3797ca66b3/w/e97523327652e311225f2991/e/db3f49a87a84e425faee13c2). The robot's side profile with dimensions is in [`robot_profile.pdf`](robot_profile.pdf).
 
 **Bearings:**
 
@@ -233,7 +233,7 @@ The two L7805CV linear regulators waste ~55% of the input power as heat (11 V �
 
 ### 3.3 Sensors, selection and placement
 
-| Sensor | Model | Purpose | Why this one |
+| Sensor | Model | Role | Why this one |
 |--------|-------|------|--------------|
 | IMU | **BNO085** | heading | fused **game rotation vector** without a magnetometer, immune to the magnetic fields that made last year's CMPS12 compass unusable (see §3.5) |
 | Distance | **4× SRF04 ultrasonic** (front, rear, left, right) | wall/obstacle distance | cheap, simple, sufficient range for the field |
@@ -445,7 +445,7 @@ It is a **waypoint loop, not a state machine**, because the Open Challenge has n
 
 ### 4.13 Surprise Rule
 
-The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a height of **50 or 150 mm** (instead of 100 mm); the vehicle must pass on the side of the **original** colour, so the visible colour is the opposite of what to follow. The camera already measures the sign height, so `camera.py` **inverts the colour** when the height is 5 or 15 cm (`apply_surprise_rule`) and matches the modified sign like any other before the inversion. Each correct passage of the modified sign scores **5 points**, up to **15**.
+The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a height of **50 or 150 mm** (instead of 100 mm); the vehicle must pass on the side of the **original** colour, so the visible colour is the opposite of what to follow. The camera already measures the sign height, so `camera.py` **inverts the colour** when the height is 5 or 15 cm (`apply_surprise_rule`) and matches the modified sign like any other before the inversion. Each correct passage of the modified sign scores **5 points**, up to **15**, so the obstacle maximum becomes **77** (62 + 15).
 
 ---
 

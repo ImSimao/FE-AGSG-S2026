@@ -94,7 +94,7 @@ its best row is the baseline until the bench numbers exist.
 Each run prints the score breakdown as JSON and leaves a screenshot, so a firmware
 change is judged by its score and its odometry error, not by hand.
 
-## Scoring (WRO FE 2026, Obstacle Challenge, max 62)
+## Scoring (WRO FE 2026, Obstacle Challenge, max 77 with the Surprise Rule)
 
 `1.1` 1 pt per section in the right direction (24) · `1.2` 1 pt per full lap (3) ·
 `1.3` 3 pts stopped in the finish section after three laps · `1.4/1.5` 2/4 pts

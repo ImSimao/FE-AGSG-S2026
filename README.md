@@ -22,6 +22,8 @@ Hi! My name is Simão and ever since I was a kid, I've been interested in comput
 
 ### Tiago Severino
 
+**Role:** Coach
+
 I'm a hardworking, goal-oriented young man. Challenges captivate me and the harder they are, the better. Overcoming limits gives me a special taste, realizing how far I can go. I've already taken part in robotics competitions and now I'm leading a team with the aim of teaching what I've learned from my experience. I believe that the only way to get where you want to go is to never stop trying and never give up until you reach the end goal.
 
 ### Team photo
@@ -46,7 +48,7 @@ This repository contains the full engineering documentation and control software
 
 The system is built around three programmable boards:
 
-| Board | Purpose |
+| Board | Role |
 |-------|------|
 | **Raspberry Pi Pico 2** (main) | Motor/servo control, odometry, IMU, navigation and decision logic |
 | **Raspberry Pi Pico 1** (sonar slave) | Reads the four ultrasonic distance sensors and streams them over UART |
@@ -91,7 +93,7 @@ The body stays **above** the walls and obstacles, so the vehicle clears low obst
 
 The drivetrain is a single rear **DC motor (N20, 1000 RPM) with a quadrature encoder**, driving the rear axle through a **3:5 gear reduction** and a **metal RC differential**, which lets the two rear wheels rotate at different speeds through corners. The front wheels use **Ackermann steering** driven by a single **servo**. The encoder provides odometry (distance travelled), and the BNO085 IMU provides heading, so the robot navigates with a closed-loop position estimate.
 
-**Technical datasheet** (full PDF in [`models/robot_profile.pdf`](models/robot_profile.pdf)):
+**Technical datasheet** (full PDF in [`robot_profile.pdf`](robot_profile.pdf)):
 
 <div align="center">
     <img src="other/img/robot_profile_page1.png" width="380" alt="Technical datasheet (1/2)">
@@ -192,7 +194,7 @@ The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the hel
 
 The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a random height of **50 mm or 150 mm** (instead of 100 mm). The vehicle must pass on the side of the **original** colour, so the visible colour is misleading.
 
-The camera measures the sign height, and the controller **inverts the colour** when the height is 5 or 15 cm; a 10 cm sign is normal. The inversion is decided per passage, and each correct passage of the modified sign scores **5 points**, up to **15**.
+The camera measures the sign height, and the controller **inverts the colour** when the height is 5 or 15 cm; a 10 cm sign is normal. The inversion is decided per passage, and each correct passage of the modified sign scores **5 points**, up to **15**, so the obstacle maximum becomes **77** (62 + 15).
 
 ## 4. Simulator (firmware-in-the-loop)
 
@@ -200,7 +202,7 @@ To validate the navigation code without burning track time, we built a **firmwar
 
 The simulator is used to:
 
-- **Score every change**, each round is timed and scored with the official WRO FE 2026 table (max 62). The seed fixes both the sign layout and the start direction, so two firmware versions are compared on the exact same track.
+- **Score every change**, each round is timed and scored with the official WRO FE 2026 table (max 77 with the Surprise Rule). The seed fixes both the sign layout and the start direction, so two firmware versions are compared on the exact same track.
 - **Measure fidelity as a number**, the firmware's own odometry is compared with the world's true pose every frame; the measured error is **2–8 cm over an 8 m run**, which is how we know the units, signs and frames are correct.
 - **Sweep sign layouts**, `src/simulator/tools/sign_sweep.py` runs one round per sign pattern (53 layouts) to find cases the firmware cannot handle (40/53 currently score 62).
 - **Report safety margins**, `src/simulator/tools/margin_report.py` rebuilds the car body at every trajectory step and reports the clearance to each wall and sign.
