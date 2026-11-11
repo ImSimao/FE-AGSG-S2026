@@ -86,7 +86,7 @@ The motor and the logic/sensor rails are separated so that motor current spikes 
 
 ### 2.3 Dimensions and Mechanical Design
 
-The vehicle measures **287 mm (length) × 61 mm (width) × 170 mm (height)**. We aimed to keep the vehicle compact so that it manoeuvres easily around the field without hitting walls or obstacles.
+The vehicle measures **200 mm (length) × 61 mm (width) × 170 mm (height)** and weighs **610 g**, well inside the 1.5 kg limit (rule 11.2). We kept the footprint compact so that it manoeuvres easily around the field without hitting walls or obstacles.
 
 The body stays **above** the walls and obstacles, so the vehicle clears low obstacles, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low: the robot measures **20 cm** below that height, which entitles it to a **30 cm** parking bay.
 

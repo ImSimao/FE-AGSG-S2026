@@ -64,9 +64,11 @@ The control software runs on **three programmable boards**: a Raspberry Pi Pico 
 
 ### 2.1 Chassis and dimensions
 
-The vehicle measures **287 mm (length) × 61 mm (width) × 170 mm (height)**. We aimed for the smallest practical footprint so the robot manoeuvres easily between the walls and obstacles.
+The vehicle measures **200 mm (length) × 61 mm (width) × 170 mm (height)** and weighs **610 g**. We aimed for the smallest practical footprint so the robot manoeuvres easily between the walls and obstacles.
 
 The body stays **above** the height of the field walls (100 mm), so it clears low obstacles without touching them, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low: the robot measures **20 cm** below that height, which entitles it to a **30 cm** parking bay. The rest of the body stays above wall level, so the vehicle still clears low obstacles.
+
+**Mass:** the complete vehicle — 3D-printed frame, electronics, battery and motors — weighs **610 g**, about 41 % of the 1.5 kg limit (rule 11.2). That margin leaves room for planned additions such as replacing the two linear regulators with a buck converter, and it keeps the load on the single N20 drive motor and on the steering servo low. The frame is 3D-printed and the electronics sit on a single perfboard deck, which keeps the structure light and easy to modify between test runs.
 
 **Vehicle views:**
 
@@ -444,7 +446,7 @@ The commit history shows the development over time, and the README plus code com
 
 1. **Bluetooth (debug only)** — the HC-06 is used only for debugging and is physically removed during competition rounds; the telemetry path is disabled for rounds (rule 11.10).
 2. **Start button** — add a start button (rules 9.10–9.11) and document the single power switch.
-3. **Weight** — weigh the vehicle and record it (≤1.5 kg, rule 11.2).
+3. **Weight** — done: measured **610 g** (limit 1.5 kg, rule 11.2); recorded in §2.1.
 4. **English** — translate the remaining Portuguese comments/prints in `src/` (chapter 7).
 
 ### Artefacts (team)
