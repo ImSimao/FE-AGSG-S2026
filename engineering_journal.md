@@ -3,7 +3,7 @@
 
 **Team:** AGSG (Portugal) — Joana Silva, Simão Freire
 **Coach:** Tiago Severino
-**Version:** 1.0.0 · **Date:** 2026-11-11 · **Commit:** `93a9142`
+**Version:** 1.0.0 · **Date:** 2026-11-11 · **Commit:** `d327305`
 
 ---
 
