@@ -20,6 +20,10 @@ MAX_SIGN_ANGLE_DEG = 20.0
 # Past this a 5 cm sign is a few pixels and the colour is a guess.
 MAX_SIGN_DISTANCE_CM = 80.0
 
+# A detected sign is matched to a field position when the two agree
+# within this radius (in field cm).
+MATCH_RADIUS_CM = 5.0
+
 
 def blob_bearing_deg(traffic_x):
     return math.degrees(math.atan2(traffic_x - (CAMERA_WIDTH / 2 - 1), CAMERA_FOCAL_PX))
@@ -36,39 +40,54 @@ def apply_surprise_rule(color, height_cm):
     return color
 
 
+def _camera_pose():
+    """Absolute (x, y) of the camera and the robot heading, in field cm."""
+    x, y = state.get_relative_odom
+    heading = state.compass_angle_relative
+    if state.clockwise == -1:
+        heading = -heading
+    angle = math.radians(heading)
+    x_camera = x + robot_distance_from_camera * math.sin(angle)
+    y_camera = y + robot_distance_from_camera * math.cos(angle)
+    return x_camera, y_camera, angle
+
+
 def match_frame(blobs, possible_traffic_positions):
-    """Pair every blob of one frame with at most one lane position.
+    """Pair every blob of one frame with at most one field position.
 
-    A blob is now (x, y, h, COLOR) in centimetres from the camera: x is the
-    lateral offset (+ right), y the forward distance, h the sign height. The
-    bearing comes straight from atan2(x, y).
+    A blob is (x, y, h, COLOR) in centimetres from the camera: x is the lateral
+    offset (+ right), y the forward distance, h the sign height. The sign's
+    absolute field position is computed and matched to the nearest field
+    position within MATCH_RADIUS_CM.
     """
-    candidates = []
-    for index, blob in enumerate(blobs):
-        x, y, _h, _color = blob
-        bearing = math.degrees(math.atan2(x, y))
-        for position in possible_traffic_positions:
-            if position.get("distance", 0) > MAX_SIGN_DISTANCE_CM:
-                continue
-            error = abs(position["angle"] - bearing)
-            if error <= MAX_SIGN_ANGLE_DEG:
-                candidates.append((error, index, position, bearing))
+    x_camera, y_camera, angle = _camera_pose()
+    sin_a = math.sin(angle)
+    cos_a = math.cos(angle)
 
-    candidates.sort(key=lambda item: item[0])
-
-    used_blobs = set()
     used_positions = set()
-    for error, index, position, bearing in candidates:
-        key = (position["pos"], position["side"])
-        if index in used_blobs or key in used_positions:
-            continue
-        used_blobs.add(index)
-        used_positions.add(key)
-        _x, _y, h, color = blobs[index]
-        effective = apply_surprise_rule(color, h)
-        Telemetry.log("blob %s (h=%.1f) -> pos %d err %.1f (%.0f cm)"
-                      % (color, h, position["pos"], error, position.get("distance", 0)))
-        Field.set_signal(position["pos"], position["side"], effective)
+    for index, blob in enumerate(blobs):
+        x, y, h, color = blob
+        # sign position relative to the camera -> absolute field position
+        sign_x = x_camera + y * sin_a + x * cos_a
+        sign_y = y_camera + y * cos_a - x * sin_a
+
+        best = None
+        best_d = None
+        for position in possible_traffic_positions:
+            key = (position["pos"], position["side"])
+            if key in used_positions:
+                continue
+            d = math.hypot(sign_x - position["x"], sign_y - position["y"])
+            if d <= MATCH_RADIUS_CM and (best_d is None or d < best_d):
+                best = position
+                best_d = d
+
+        if best is not None:
+            used_positions.add((best["pos"], best["side"]))
+            effective = apply_surprise_rule(color, h)
+            Telemetry.log("blob %s (h=%.1f) -> pos %d err %.1f cm"
+                          % (color, h, best["pos"], best_d))
+            Field.set_signal(best["pos"], best["side"], effective)
 
 
 class Camera:
