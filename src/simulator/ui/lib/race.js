@@ -1,6 +1,7 @@
 // WRO Future Engineers 2026 - Obstacle Challenge scoring.
 //
-// Transcribed from the official game rules 2026, section 10 (max 62 points):
+// Transcribed from the official game rules 2026, section 10 (max 62 points,
+// 77 with the Surprise Rule):
 //
 //   1.1  1 pt  section driven in the challenge direction         max 24
 //   1.2  1 pt  full lap (8 sections, counted on leaving the last corner)  max 3
@@ -132,6 +133,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
     signsMoved: false,
     wallMoved: false,
     signWrongSide: false, // a sign taken on the wrong side ends the round
+    surprisePasses: 0, // Surprise Rule: successful modified-sign passages (max 3)
     wallHits: 0,
     startInParking: false,
     finishedInSection: false,
@@ -186,6 +188,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
     } else if (state.parking === "1.8.3") {
       add("1.8.3", "parked partly or not parallel", 7);
     }
+    add("SR", `modified sign passages (${state.surprisePasses}/3)`, Math.min(3, state.surprisePasses) * 5);
 
     state.breakdown = breakdown;
     const raw = breakdown.reduce((sum, item) => sum + item.points, 0);
@@ -211,6 +214,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       wallMoved: state.wallMoved,
       parking: state.parking,
       startInParking: state.startInParking,
+      surprisePasses: state.surprisePasses,
       ghostError: appState.ghostErrorMeters,
       timedOut: state.timedOut,
     });
@@ -229,6 +233,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
     state.signsMoved = false;
     state.wallMoved = false;
     state.signWrongSide = false;
+    state.surprisePasses = 0;
     state.lastSignPassageCount = 0;
     state.wallHits = 0;
     state.startInParking = false;
@@ -428,6 +433,11 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       if (passages.length > seenPassages) {
         for (let i = seenPassages; i < passages.length; i += 1) {
           const passage = passages[i];
+          // Surprise Rule: +5 per successful passage of the modified sign (max 3).
+          if (passage.modified && passage.on_intended_side === true && state.surprisePasses < 3) {
+            state.surprisePasses += 1;
+            log(`Modified sign passed on the correct side (+5, ${state.surprisePasses}/3).`);
+          }
           if (passage.on_intended_side !== false) continue;
           state.lastSignPassageCount = passages.length;
           state.signWrongSide = true;
@@ -570,6 +580,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       wallHits: state.wallHits,
       parking: state.parking,
       startInParking: state.startInParking,
+      surprisePasses: state.surprisePasses,
       timedOut: state.timedOut,
       distanceMeters: Number(state.distanceMeters.toFixed(2)),
       ghostError: appState.ghostErrorMeters,

@@ -269,6 +269,7 @@ export function createWsTelemetry({ log, simulator, url = null } = {}) {
     const signs = detections.map((detection) => ({
       lane: detection.sign.lane,
       state: detection.sign.state,
+      heightCm: detection.sign.heightCm ?? 10, // Surprise Rule (5/10/15 cm)
       distance: maybeNoisy(detection.distance, config.telemetryNoise.signDistanceMetersSigma, {
         clampMin: 0,
       }),

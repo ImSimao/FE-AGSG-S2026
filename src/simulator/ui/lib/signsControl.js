@@ -65,7 +65,11 @@ export function createSignControls({ worldToScreen, screenToWorld, log }) {
 
 export function randomizeSigns() {
   const rand = rngNext;
-  for (const s of trafficSigns) s.state = 0;
+  for (const s of trafficSigns) {
+    s.state = 0;
+    s.modified = false;
+    s.heightCm = 10;
+  }
   const lanes = ["bottom", "top", "left", "right"];
   const minSeparation = 0.5;
   const singleLane = lanes[Math.floor(rand() * lanes.length)];
@@ -117,6 +121,17 @@ export function randomizeSigns() {
     for (const s of chosen) {
       s.state = rand() < 0.5 ? 1 : 2;
     }
+  }
+
+  // Surprise Rule: replace one active sign with a "modified" sign - the visible
+  // colour is the opposite of the original and its height is 5 or 15 cm (instead
+  // of 10). The original colour is the opposite of what the camera now sees.
+  const active = trafficSigns.filter((s) => s.state === 1 || s.state === 2);
+  if (active.length) {
+    const picked = active[Math.floor(rand() * active.length)];
+    picked.modified = true;
+    picked.heightCm = rand() < 0.5 ? 5 : 15;
+    picked.state = picked.state === 1 ? 2 : 1;
   }
 }
 

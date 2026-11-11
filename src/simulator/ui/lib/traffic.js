@@ -51,6 +51,8 @@ export const trafficSigns = uniqueSignCoords.map(([x, y]) => ({
   dx: 0, // displacement from the seat, from being pushed (rule 13.14)
   dy: 0,
   state: 0, // 0=empty,1=green,2=red
+  modified: false, // Surprise Rule: opposite visible colour + 5/15 cm height
+  heightCm: 10,
   lane: (() => {
     if (y === 60) return "bottom";
     if (y === 240 || y === 260) return "top";
