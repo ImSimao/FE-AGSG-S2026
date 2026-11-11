@@ -349,6 +349,10 @@ The encoder signal is the most sensitive part of the system. The motor produces 
 
 Rather than guessing whether a firmware change helps, we built a **firmware-in-the-loop simulator** so every change is scored by the same WRO 2026 table the judges use. Before it, a change was judged "feels better" after a few manual runs; now it is judged by its score, lap time, odometry error and wall/sign margin, on a reproducible track.
 
+<div align="center">
+    <img src="other/img/simulador.png" width="650" alt="The WRO simulator running the AGSG firmware in the loop">
+</div>
+
 **Design decision — run the real firmware, not a reimplementation.** The simulator does not port the control code to Python; it runs the actual `firmware/agsg/` MicroPython under CPython through a hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A bug fixed in `firmware/agsg/` is fixed in the next simulated round with no porting step. A reimplementation would only prove a copy works — it would never prove the car works.
 
 **Fidelity is measured, not assumed.** The "Erro odometria" tile compares the firmware's own `state.odom` against the world's true pose every frame; the median error is **2.8 cm** and the maximum per round **6.9 cm**. That number is the proof that the units, signs and coordinate frames are correct — exactly where such integrations usually fail silently.
