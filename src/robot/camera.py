@@ -7,7 +7,7 @@ from telemetry import Telemetry
 
 camera_angle = 70
 camera_distance = 75
-robot_distance_from_camera = 13.5
+robot_distance_from_camera = 10.5
 
 # A blob is placed by bearing, not by being first in the list. The list is
 # ordered by the field layout, so "first" meant "the leftmost sign of the lane"
@@ -240,17 +240,12 @@ def get_traffic_lane_inside_pov():
     elif state.relative_lane != 3:
         traffic_coord.append([260, 100, 3, 1])
 
-    x, y = state.get_relative_odom
+    x_camera, y_camera, angle = _camera_pose()
     # The compass mirrors in a ccw round (see get_angle_to_rotate): with the raw
     # value every candidate landed outside the 35 degree half-FOV, match_frame
     # paired nothing, and the car drove the whole lane without registering a
     # single colour - the round ended on the first sign, on the wrong side.
-    heading = state.compass_angle_relative
-    if state.clockwise == -1:
-        heading = -heading
-    angle = math.radians(heading)
-    x_camera = x + robot_distance_from_camera * math.sin(angle)
-    y_camera = y + robot_distance_from_camera * math.cos(angle)
+    heading = math.degrees(angle)
 
     position_inside_pov = []
     
