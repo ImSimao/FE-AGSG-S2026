@@ -69,7 +69,7 @@ class Hal:
     self.heading_deg = 0.0
     self.enc_pending_cm = 0.0
     self.distances = {key: INVALID for key in SONAR_ORDER}
-    self.signs = []  # [{"state": 1|2, "bearing_deg": float, "distance_m": float}]
+    self.signs = []  # [{"state": 1|2, "bearing_deg": float, "distance_m": float, "height_cm": float}]
     self.camera_frame = b"CAM:\n"
 
     # --- buses
@@ -129,13 +129,15 @@ class Hal:
         try:
           bearing = float(sign.get("bearingDeg", sign.get("bearing_deg", 0.0)))
           distance = float(sign.get("distance", 0.0))
+          # Surprise Rule: a modified sign is 5 or 15 cm tall instead of 10 cm.
+          height_cm = float(sign.get("heightCm", sign.get("height_cm", 10.0)))
         except (TypeError, ValueError):
           continue
         width_px = apparent_width_px(distance)
         if width_px * width_px < MIN_BLOB_AREA_PX:   # square face: area = w * h
           continue
         clean.append({"state": state, "bearing_deg": bearing, "distance_m": distance,
-                      "width_px": width_px})
+                      "height_cm": height_cm, "width_px": width_px})
       self.signs = clean
       self.camera_frame = self._camera_frame()
       # The camera UART is a one-way bus: the frame has to sit in the receive
@@ -162,20 +164,19 @@ class Hal:
   def _camera_frame(self) -> bytes:
     """Project the visible signs into the OpenMV wire format.
 
-    The firmware gate is ``hypot(cx - 80, cy - 120) <= 65`` measured on the
-    *bottom centre* of the blob, so the projection has to stay in that window
-    to reproduce what the camera really reports.
+    The new firmware (Camera/main.py) reports each sign in CENTIMETRES in the
+    camera frame: ``CAM:x,y,h,COLOR`` where x is the lateral offset (+ right),
+    y the forward distance, h the sign height and COLOR the colour seen.
     """
     parts = []
     for sign in self.signs:
       color = "GREEN" if sign["state"] == 1 else "RED"
       bearing = math.radians(sign["bearing_deg"])
-      # physical bearing -> image column, then hmirror/vflip (180 deg rotation)
-      x_phys = CAM_WIDTH / 2.0 + CAM_FOCAL_PX * math.tan(bearing)
-      x_img = (CAM_WIDTH - 1) - x_phys
-      cx = int(max(0, min(CAM_WIDTH - 1, round(x_img))))
-      cy = CAM_HEIGHT - 6  # blob bottom near the bottom edge of the frame
-      parts.append("{},{},{}".format(cx, cy, color))
+      distance_cm = sign["distance_m"] * 100.0
+      x = distance_cm * math.tan(bearing)   # lateral offset (+ right)
+      y = distance_cm                        # forward distance
+      h = sign["height_cm"]                  # 5 / 10 / 15 cm
+      parts.append("%.1f,%.1f,%.1f,%s" % (x, y, h, color))
     line = "CAM:" + ";".join(parts) + "\n"
     return line.encode("ascii")
 

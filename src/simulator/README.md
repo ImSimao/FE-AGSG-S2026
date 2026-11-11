@@ -50,7 +50,7 @@ be compared on the exact same track.
 | length | metres | cm |
 | heading | degrees CCW from +x, absolute | degrees, zero at boot, sign set by `--imu-sign` |
 | sonar | metres, labels Front/Rear/Left/Right | cm ×10 in a `0xA5` + XOR frame, `0xFFFF` = no echo, saturates at 250 cm |
-| camera | `{lane, state(1 green / 2 red), distance, angleDeg}` | `CAM:cx,cy,COLOR` lines, QQVGA 160×120 with vflip+hmirror |
+| camera | `{lane, state(1 green / 2 red), distance, angleDeg, heightCm}` | `CAM:x,y,h,COLOR` lines, cm in the camera frame (x + right, y forward, h sign height 5/10/15) |
 | encoder | metres travelled this tick | pulses injected into `encoder._count` (33.2 counts/cm: PPR 200, ratio 3/5, Ø 32 mm) |
 | position | metres, origin bottom-left | absolute cm, mirrored in x when `clockwise == 1` |
 
