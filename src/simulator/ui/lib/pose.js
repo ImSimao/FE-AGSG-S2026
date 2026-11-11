@@ -180,9 +180,10 @@ function recordSignPassages(prev, curr) {
     // right. Nothing here is scored - only touching a sign costs points - so this
     // just says whether the car took the line the firmware aimed for.
     const sideOfSign = pass.side;
-    // The sign's state is its ORIGINAL colour (a modified sign keeps it), so
-    // the side to pass on follows that colour directly.
-    const intendedSide = sign.state === 1 ? "left" : "right";
+    // Surprise Rule: a modified sign (5/15 cm) is passed on the side of its
+    // INVERTED colour. The firmware inverts from the height; scoring agrees.
+    const effectiveState = sign.modified ? (sign.state === 1 ? 2 : 1) : sign.state;
+    const intendedSide = effectiveState === 1 ? "left" : "right";
     const onIntendedSide = sideOfSign === intendedSide;
 
     // Every pass goes into the round record, right or wrong: an exported round
