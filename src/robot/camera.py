@@ -25,11 +25,28 @@ def blob_bearing_deg(traffic_x):
     return math.degrees(math.atan2(traffic_x - (CAMERA_WIDTH / 2 - 1), CAMERA_FOCAL_PX))
 
 
+def apply_surprise_rule(color, height_cm):
+    """Surprise Rule: a modified sign is 5 or 15 cm tall (instead of 10 cm) and
+    carries the OPPOSITE colour of the original. The vehicle must pass on the
+    side of the original colour, so a 5/15 cm sign's colour is inverted here.
+    h == 0 means the height was unknown (a clipped sign), so no inversion.
+    """
+    if 3.5 <= height_cm < 7.5 or 12.5 < height_cm <= 18.0:
+        return "GREEN" if color == "RED" else "RED"
+    return color
+
+
 def match_frame(blobs, possible_traffic_positions):
-    """Pair every blob of one frame with at most one lane position."""
+    """Pair every blob of one frame with at most one lane position.
+
+    A blob is now (x, y, h, COLOR) in centimetres from the camera: x is the
+    lateral offset (+ right), y the forward distance, h the sign height. The
+    bearing comes straight from atan2(x, y).
+    """
     candidates = []
     for index, blob in enumerate(blobs):
-        bearing = blob_bearing_deg(blob[0])
+        x, y, _h, _color = blob
+        bearing = math.degrees(math.atan2(x, y))
         for position in possible_traffic_positions:
             if position.get("distance", 0) > MAX_SIGN_DISTANCE_CM:
                 continue
@@ -47,9 +64,11 @@ def match_frame(blobs, possible_traffic_positions):
             continue
         used_blobs.add(index)
         used_positions.add(key)
-        Telemetry.log("blob %s -> pos %d err %.1f (%.0f cm)"
-                      % (blobs[index][2], position["pos"], error, position.get("distance", 0)))
-        Field.set_signal(position["pos"], position["side"], blobs[index][2])
+        _x, _y, h, color = blobs[index]
+        effective = apply_surprise_rule(color, h)
+        Telemetry.log("blob %s (h=%.1f) -> pos %d err %.1f (%.0f cm)"
+                      % (color, h, position["pos"], error, position.get("distance", 0)))
+        Field.set_signal(position["pos"], position["side"], effective)
 
 
 class Camera:
@@ -58,9 +77,11 @@ class Camera:
 
     Expects newline-terminated lines from the camera UART in the form:
 
-        CAM:cx,bottom_y,COLOR;cx,bottom_y,COLOR
+        CAM:x,y,h,COLOR;x,y,h,COLOR
 
-    Empty frames are sent as ``CAM:``.
+    x is the lateral offset of the sign centre in cm (+ right), y the forward
+    distance in cm, h the sign height in cm (5/10/15; 0 if clipped) and COLOR
+    the colour actually seen. Empty frames are sent as ``CAM:``.
     """
 
     _uart = None
@@ -90,14 +111,15 @@ class Camera:
         blobs = []
         for part in payload.split(";"):
             fields = part.split(",")
-            if len(fields) != 3:
+            if len(fields) != 4:
                 continue
             try:
-                cx = int(fields[0])
-                cy = int(fields[1])
+                x = float(fields[0])   # lateral offset of the sign centre (cm, + right)
+                y = float(fields[1])   # forward distance of the sign centre (cm)
+                h = float(fields[2])   # sign height (5 / 10 / 15 cm; 0 if clipped)
             except ValueError:
                 continue
-            blobs.append([cx, cy, fields[2]])
+            blobs.append([x, y, h, fields[3]])   # [x, y, h, COLOR]
         return blobs
 
     @staticmethod
@@ -179,7 +201,7 @@ def get_colour_position(traffic_x, traffic_y, signal, possible_traffic_positions
     relative_angle = math.degrees(math.atan2(dy, dx))
     relative_angle = (relative_angle + 180) % 360 - 180
 
-    match_frame([(traffic_x, traffic_y, signal)], possible_traffic_positions)
+    match_frame([(traffic_x, traffic_y, 10.0, signal)], possible_traffic_positions)
 
 
 def get_traffic_lane_inside_pov():
