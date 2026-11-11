@@ -311,7 +311,7 @@ The encoder delta and the heading are integrated in the background loop at 100 H
 
 **Steering PID** — the cross-track error is corrected by a PID with gains `kp=0.35, ki=0.003, kd=0.5`, with the output clamped to the steering range.
 
-**Cruise control** — an incremental speed controller (`kp=1/70`) converts the target speed into a motor PWM, with acceleration/deceleration limits (accel 1/3, decel 2/3 of full PWM per second). A guard clamps the PWM to zero when the target speed and PWM have opposite signs, preventing the motor from reversing during forward driving.
+**Cruise control** — an incremental speed controller (`kp=1/150`) converts the target speed into a motor PWM, with acceleration/deceleration limits (`max_accel=0.425`, `max_decel=2.25` of full PWM per second) and a `min_drive_pwm=0.15` floor that overcomes static friction. The acceleration is scaled down while steering (`accel_scale = 1.0 − 0.35·steering`) so the wheels do not scrub in corners. Before reversing, the controller holds the brake for `REVERSE_HOLD_MS` (500 ms) so the wheels really stop — reversing while still rolling makes them skid and corrupts the odometry.
 
 **Sonar** — the sonar controller (Pico 1) streams the four distances over UART0 using a framed protocol (header `0xA5`, four little-endian `uint16` scaled ×10, XOR checksum), so a dropped byte cannot permanently desynchronise the receiver.
 
@@ -374,8 +374,8 @@ Measuring all four sonars at once caused **cross-talk** (echoes from one sensor 
 **3. Encoder debounce — fixed vs dynamic**
 A fixed debounce could not handle both fast and slow speeds: at low speed the real edges are sparse and the noise dominates. We implemented a **dynamic debounce** whose window scales with the current speed, and we also raised the **PWM to 20 kHz** to move the noise source above the encoder band. These two changes together fixed the encoder over-counting.
 
-**4. Cruise control reversal guard**
-The incremental cruise controller could drive the motor PWM negative during deceleration, reversing the motor. We added a **guard** that clamps the PWM to zero when the target speed and PWM have opposite signs.
+**4. Cruise-control reversal guard (brake hold)**
+Reversing the motor while the wheels are still rolling makes them skid, and the encoder then counts wheel spin that does not translate into travel, corrupting the odometry. We added a **guard** that, when the target speed and the current speed have opposite signs, holds the brake for `REVERSE_HOLD_MS` (500 ms) before the motor actually reverses.
 
 **5. Motor and gearing choice**
 We chose a **1000 RPM N20 with a 3:5 reduction** so the wheel turns at 600 RPM — enough top speed (~100 cm/s theoretical) while keeping torque reserve, and we run well below the maximum (45–60 cm/s) for control stability.
