@@ -43,8 +43,8 @@ while True:
             rx = y + robot_distance_from_camera  # forward -> robot x
             ry = x  # lateral (+right) -> robot y
             # Absolute field position (same transform as match_frame).
-            fx = x_cam + y * sin_a + x * cos_a
-            fy = y_cam + y * cos_a - x * sin_a
+            fx = x_cam + y * cos_a + x * sin_a
+            fy = y_cam + y * sin_a - x * cos_a
             print("%-5s | cam=(%6.1f,%6.1f) h=%4.1f | robot=(%6.1f,%6.1f) | field=(%6.1f,%6.1f)"
                   % (color, x, y, h, rx, ry, fx, fy))
 

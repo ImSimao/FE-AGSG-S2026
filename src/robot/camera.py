@@ -47,8 +47,8 @@ def _camera_pose():
     if state.clockwise == -1:
         heading = -heading
     angle = math.radians(heading)
-    x_camera = x + robot_distance_from_camera * math.sin(angle)
-    y_camera = y + robot_distance_from_camera * math.cos(angle)
+    x_camera = x + robot_distance_from_camera * math.cos(angle)
+    y_camera = y + robot_distance_from_camera * math.sin(angle)
     return x_camera, y_camera, angle
 
 
@@ -68,8 +68,8 @@ def match_frame(blobs, possible_traffic_positions):
     for index, blob in enumerate(blobs):
         x, y, h, color = blob
         # sign position relative to the camera -> absolute field position
-        sign_x = x_camera + y * sin_a + x * cos_a
-        sign_y = y_camera + y * cos_a - x * sin_a
+        sign_x = x_camera + y * cos_a + x * sin_a
+        sign_y = y_camera + y * sin_a - x * cos_a
 
         best = None
         best_d = None
