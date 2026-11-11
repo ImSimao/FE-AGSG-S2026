@@ -111,6 +111,8 @@ The drivetrain is built from:
 | Wheelbase | 70 mm | steering radius R = L / tan(δ) |
 | Steering arm offset | 10 mm | |
 
+**Full CAD model** — the complete design (parts and assemblies) is available in the [Onshape document](https://cad.onshape.com/documents/e064973258882f3797ca66b3/w/e97523327652e311225f2991/e/db3f49a87a84e425faee13c2). The robot's side profile with dimensions is in [`models/robot_profile.pdf`](models/robot_profile.pdf).
+
 **Bearings:**
 
 | Location | Count | OD | Width | ID |
