@@ -2,6 +2,30 @@
 
 **Team:** AGSG (Portugal) — Joana Silva, Simão Freire · **Coach:** Tiago Severino
 
+## The Team
+
+### Joana Silva
+
+**Age:** 19 · **University:** Faculdade de Medicina da Universidade de Lisboa, Lisboa, Portugal · **Role:** Computer vision and sensor integration
+
+Hi, I'm Joana from Portugal and this is my fourth season of WRO. I've participated in this category before, but as I find it extremely challenging, there's always something to improve on. I've enjoyed challenges ever since I was little and this is another one that connects what I love: programming and robotics. My expertise in this team focuses on computer vision algorithms and sensor integration.
+
+### Simão Freire
+
+**Age:** 21 · **University:** Instituto Superior de Engenharia de Lisboa, Lisboa, Portugal · **Role:** Embedded systems programming and mechanical design
+
+Hi! My name is Simão and ever since I was a kid, I've been interested in computers and how they work, that led me to the path of wanting to learn more about programming and so I joined the robotics club of my school. This will be my third season in WRO and I'm really looking forward to it! I specialize in embedded systems programming and mechanical design.
+
+### Tiago Severino
+
+**Role:** Coach
+
+I'm a hardworking, goal-oriented young man. Challenges captivate me and the harder they are, the better. Overcoming limits gives me a special taste, realizing how far I can go. I've already taken part in robotics competitions and now I'm leading a team with the aim of teaching what I've learned from my experience. I believe that the only way to get where you want to go is to never stop trying and never give up until you reach the end goal.
+
+### Team photo
+
+The official team photo is stored in [`t-photos/`](t-photos/).
+
 ## Table of contents
 
 1. [Introduction](#1-introduction)
@@ -119,6 +143,29 @@ The cruise controller is an incremental speed controller with acceleration/decel
 ### 3.6 How the robot drives
 
 The control is a closed loop. The state machine (`obstacle_challenge`) sets a target speed and target heading; the background loop continuously integrates odometry — distance from the encoder (`counts / (PPR / gear ratio) × wheel circumference`) and heading from the BNO085 IMU — and a **PID** controller steers toward the target heading while the **cruise controller** regulates motor speed with acceleration and deceleration limits. The sonars (distance) and the camera (traffic signs) feed events back to the state machine, which switches state whenever a milestone is reached (a wall ahead, a traffic sign, or the parking spot).
+
+### 3.7 Lane following and traffic-sign logic
+
+The obstacle challenge is a **three-lap** run around a track whose lanes are separated by traffic signs placed on the inner wall. Each sign is either **green** (the robot must pass on its **left**) or **red** (the robot must pass on its **right**). The state machine in `obstacle_challenge.py` drives each lane in three phases:
+
+1. **Entry** — before entering a corridor the robot first reads the **entry traffic sign** so it enters on the correct side (`Field.can_enter_lane()`). If the sign is not visible yet, it drives toward the camera position and keeps searching in one continuous move until the colour is confirmed (`stop_when=Field.can_enter_lane`).
+2. **Corridor** — halfway along the corridor it re-reads the **exit traffic sign** (`Field.can_exit_lane()`). Depending on the colour it either crosses from the right side to the left (or vice-versa) or stays on the same side until the end of the corridor.
+3. **Next lane** — the side to take is returned by `Field.lanes_sides()`, and the lane offset (`get_traffic_lane_y()`) is computed from that side, so the trajectory adjusts to the traffic sign.
+
+The **first lap is used to detect and memorise** the colour of every sign. The second and third laps read the colours from the memorised `Field` model and go straight to the correct side without stopping to re-detect, which saves time.
+
+### 3.8 Confirming a traffic sign (field-of-view time)
+
+A sign position is never trusted the moment the camera first sees it: the robot keeps looking until it is sure of the colour, or until it is sure that there is no sign there at all. `camera.py` accumulates how long each sign position stays inside the camera's field of view (`_accumulate_pov_time()`), and `field.py` only treats a still-unknown position as **effectively empty** once it has been observed for at least `ZONE_POV_THRESHOLD_MS` (2 s). This confirms the sign really stayed in view long enough to rule out a missed detection, instead of mistaking "not seen yet" for "no sign".
+
+### 3.9 Motion control, safety and odometry correction
+
+- **No skidding.** The cruise controller applies acceleration/deceleration limits and holds the brake for `REVERSE_HOLD_MS` (500 ms) before reversing direction, because a skidding wheel makes the encoder count wheel spin that does not translate into travel, which corrupts the odometry.
+- **Servo limits.** Steering is clamped to ±`_MAX_STEERING_OFFSET` (29°), and the cruise controller reduces its acceleration while the wheels are steered (the `accel_scale` term), so the servo is never forced and the tyres do not scrub in corners.
+- **Odometry correction.** The background loop runs `_adjust_odometry()` at 40 Hz, correcting the position estimate with the sonars only at known locations — `correct_corridor()` while travelling a straight corridor and `correct_corner()` in the corners.
+- **Timeouts.** Every rotation and movement has a timeout — `ROTATE_TIMEOUT_MS` (8 s), `MOVE_TIMEOUT_MS` (60 s), a 3 s wait for the exit sign, and 5 s / 10 s parking loops — so a missed detection or a sensor glitch can never stall the robot forever.
+
+The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the help of this guide: <https://youtu.be/4Y7zG48uHRo>.
 
 ## 4. Build and Upload
 
