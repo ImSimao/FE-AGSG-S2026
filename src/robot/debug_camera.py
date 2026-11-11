@@ -38,10 +38,10 @@ while True:
         cos_a = math.cos(angle)
         print("--- %d sign(s) ---" % len(blobs))
         for x, y, h, color in blobs:
-            # Robot frame: origin at the rear axle, +y forward, +x right.
+            # Robot frame: origin at the rear axle, +x forward, +y right (local).
             # The camera sits robot_distance_from_camera cm ahead of that origin.
-            rx = x
-            ry = y + robot_distance_from_camera
+            rx = y + robot_distance_from_camera  # forward -> robot x
+            ry = x  # lateral (+right) -> robot y
             # Absolute field position (same transform as match_frame).
             fx = x_cam + y * sin_a + x * cos_a
             fy = y_cam + y * cos_a - x * sin_a
