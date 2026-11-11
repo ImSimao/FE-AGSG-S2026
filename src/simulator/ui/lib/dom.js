@@ -11,6 +11,7 @@ export function getDomRefs() {
     disconnectBtn: document.getElementById("disconnectBtn"),
     simToggleBtn: document.getElementById("simToggleBtn"),
     randomizeSignsBtn: document.getElementById("randomizeSignsBtn"),
+    surpriseRuleBtn: document.getElementById("surpriseRuleBtn"),
     modeTelemetryBtn: document.getElementById("modeTelemetryBtn"),
     modePlayBtn: document.getElementById("modePlayBtn"),
     followHeadingBtn: document.getElementById("followHeadingBtn"),

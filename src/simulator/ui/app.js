@@ -557,6 +557,12 @@ function wireEvents() {
     updateSimButton();
   });
   dom.randomizeSignsBtn.addEventListener("click", randomizeSigns);
+  dom.surpriseRuleBtn.addEventListener("click", () => {
+    appState.surpriseRule = !appState.surpriseRule;
+    dom.surpriseRuleBtn.setAttribute("aria-pressed", String(appState.surpriseRule));
+    dom.surpriseRuleBtn.textContent = `Surprise Rule: ${appState.surpriseRule ? "On" : "Off"}`;
+    randomizeSigns();
+  });
   dom.modeTelemetryBtn.addEventListener("click", () => {
     modeController.setMode(Modes.TELEMETRY);
     updateSimButton();

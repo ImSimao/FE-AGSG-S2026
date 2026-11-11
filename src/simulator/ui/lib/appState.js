@@ -21,6 +21,7 @@ export const appState = {
   showDistances: false,
   realWorldMode: false,
   showSignHud: false,
+  surpriseRule: true, // Surprise Rule toggle (modified sign)
   simRunning: false,
   simTimer: null,
   simTime: 0,

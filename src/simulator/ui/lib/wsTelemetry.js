@@ -268,7 +268,11 @@ export function createWsTelemetry({ log, simulator, url = null } = {}) {
     const detections = detectTrafficSignsInFov(pose);
     const signs = detections.map((detection) => ({
       lane: detection.sign.lane,
-      state: detection.sign.state,
+      // A modified sign's visible colour is the opposite of its original; the
+      // firmware must see the visible colour and use the height to invert it.
+      state: detection.sign.modified
+        ? (detection.sign.state === 1 ? 2 : 1)
+        : detection.sign.state,
       heightCm: detection.sign.heightCm ?? 10, // Surprise Rule (5/10/15 cm)
       distance: maybeNoisy(detection.distance, config.telemetryNoise.signDistanceMetersSigma, {
         clampMin: 0,

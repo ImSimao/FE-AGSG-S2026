@@ -123,15 +123,17 @@ export function randomizeSigns() {
     }
   }
 
-  // Surprise Rule: replace one active sign with a "modified" sign - the visible
-  // colour is the opposite of the original and its height is 5 or 15 cm (instead
-  // of 10). The original colour is the opposite of what the camera now sees.
-  const active = trafficSigns.filter((s) => s.state === 1 || s.state === 2);
-  if (active.length) {
-    const picked = active[Math.floor(rand() * active.length)];
-    picked.modified = true;
-    picked.heightCm = rand() < 0.5 ? 5 : 15;
-    picked.state = picked.state === 1 ? 2 : 1;
+  // Surprise Rule: flag one active sign as "modified" - its VISIBLE colour is
+  // the opposite of its ORIGINAL colour and its height is 5 or 15 cm (instead of
+  // 10). The sign keeps its ORIGINAL colour here; the camera emulation inverts
+  // it when it sends the frame to the firmware.
+  if (appState.surpriseRule) {
+    const active = trafficSigns.filter((s) => s.state === 1 || s.state === 2);
+    if (active.length) {
+      const picked = active[Math.floor(rand() * active.length)];
+      picked.modified = true;
+      picked.heightCm = rand() < 0.5 ? 5 : 15;
+    }
   }
 }
 

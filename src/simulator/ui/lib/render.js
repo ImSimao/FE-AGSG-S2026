@@ -166,6 +166,18 @@ export function createRenderer({ ctx, worldToScreen, screenToWorld, log }) {
       ctx.rect(p.x - half, p.y - half, size, size);
       ctx.fill();
       ctx.stroke();
+      if (sign.modified) {
+        // Surprise Rule: the sign keeps its ORIGINAL colour but is flagged with
+        // a dashed amber ring so the operator can see which one is "inverted".
+        ctx.save();
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, half + 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
     ctx.restore();
   }
