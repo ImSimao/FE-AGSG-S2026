@@ -227,9 +227,9 @@ The CMPS12 reads ~0° drift in a clean environment, but the competition track ca
 
 | Board | Firmware | Responsibility |
 |-------|----------|----------------|
-| Raspberry Pi Pico 2 (main) | `src/` (MicroPython) | navigation, control, sensor fusion |
-| Raspberry Pi Pico 1 (sonar) | `src/SonarSlave/` | reads the 4 sonars, streams distances over UART |
-| OpenMV H7 | `src/Camera/` | detects red/green traffic signs, streams detections over UART |
+| Raspberry Pi Pico 2 (main) | `firmware/agsg/` (MicroPython) | navigation, control, sensor fusion |
+| Raspberry Pi Pico 1 (sonar) | `firmware/agsg/SonarSlave/` | reads the 4 sonars, streams distances over UART |
+| OpenMV H7 | `firmware/agsg/Camera/` | detects red/green traffic signs, streams detections over UART |
 
 ![Communication diagram](schemes/communication_diagram.png)
 
@@ -433,7 +433,7 @@ The repository is structured so another team can rebuild the vehicle:
 - `models/` — CAD and 3D-printable files.
 - `schemes/` — wiring diagrams (communication and power).
 - `other/img/` — the obstacle-challenge state machine flowchart.
-- `src/` — all control software (main, sonar slave, camera firmware).
+- `firmware/agsg/` — all control software (main, sonar slave, camera firmware).
 - `t-photos/`, `v-photos/`, `video/` — team/vehicle photos and driving video.
 
 The commit history shows the development over time, and the README plus code comments document how to flash each board.
@@ -447,7 +447,7 @@ The commit history shows the development over time, and the README plus code com
 1. **Bluetooth (debug only)** — the HC-06 is used only for debugging and is physically removed during competition rounds; the telemetry path is disabled for rounds (rule 11.10).
 2. **Start button** — add a start button (rules 9.10–9.11) and document the single power switch.
 3. **Weight** — done: measured **610 g** (limit 1.5 kg, rule 11.2); recorded in §2.1.
-4. **English** — translate the remaining Portuguese comments/prints in `src/` (chapter 7).
+4. **English** — translate the remaining Portuguese comments/prints in `firmware/agsg/` (chapter 7).
 
 ### Artefacts (team)
 

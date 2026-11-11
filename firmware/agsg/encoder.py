@@ -5,7 +5,7 @@ import math
 # ===== CONFIGURATION =====
 PPR = 200               # encoder pulses per revolution
 RATIO = 3 / 5           # gear ratio
-WHEEL_DIAMETER = 3.2    # centimetres
+WHEEL_DIAMETER = 3.0    # centimetres
 
 # Pins (static)
 _encoder_a = Pin(7, Pin.IN, Pin.PULL_UP)

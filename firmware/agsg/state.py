@@ -31,7 +31,7 @@ class State:
         return (self.compass_angle + 
         (self.relative_lane * -90.0 * self.clockwise) + 360.0) % 360.0
 
-    def set_relative_odom (self, x_relative, y_relative, check_diff = False):
+    def set_relative_odom(self, x_relative, y_relative, check_diff=False, reset_covariance=True):
 
         if self.relative_lane == 0:
             if self.clockwise == -1:
@@ -61,6 +61,12 @@ class State:
             else:
                 self.odom_x = State.outer_wall-y_relative
                 self.odom_y = State.outer_wall-x_relative
+
+        # A challenge snap is a new pose, not a sonar residual. Tighten P so
+        # the filter does not pull back toward the pre-snap estimate.
+        if reset_covariance:
+            from ekf import pose_ekf
+            pose_ekf.reset_from_state()
 
     @property
     def get_relative_odom(self):

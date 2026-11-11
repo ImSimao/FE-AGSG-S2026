@@ -115,7 +115,7 @@ The main controller (Pico 2) runs a real-time **background control loop on the s
 5. sends **telemetry** over Bluetooth,
 6. applies **sonar-based odometry corrections**.
 
-### 3.2 Main controller modules (`src/`)
+### 3.2 Main controller modules (`firmware/agsg/`)
 
 | Module | Responsibility | Related hardware |
 |--------|----------------|------------------|
@@ -137,11 +137,11 @@ The main controller (Pico 2) runs a real-time **background control loop on the s
 | `telemetry.py` | Telemetry frame (CSV + XOR checksum) over UART → Bluetooth | HC-06 |
 | `uart.py` | Shared UART helper | — |
 
-### 3.3 Sonar slave (`src/SonarSlave/`)
+### 3.3 Sonar slave (`firmware/agsg/SonarSlave/`)
 
 The sonar slave (Pico 1) reads the four SRF04 ultrasonic sensors and transmits the four distances over UART0 using a framed protocol (header byte `0xA5`, four little-endian `uint16` values scaled by 10, and an XOR checksum). This framing lets the receiver re-synchronise if a byte is ever lost.
 
-### 3.4 Camera (`src/Camera/`)
+### 3.4 Camera (`firmware/agsg/Camera/`)
 
 The OpenMV H7 runs a colour-blob detector that finds the red and green traffic signs in the image and streams `CAM:<cx>,<bottom_y>,<COLOR>` lines over UART. The main controller maps each detection to the corresponding traffic-sign position on the field.
 
@@ -186,9 +186,9 @@ The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the hel
 All firmware is flashed with **MicroPython**:
 
 1. Flash MicroPython onto the Pico 2 (main) and Pico 1 (sonar slave).
-2. Upload the files in `src/` to the **Pico 2** (using the MicroPico VS Code extension, Thonny, or `mpremote`). `main.py` is the entry point.
-3. Upload the contents of `src/SonarSlave/` to the **Pico 1** (`main.py` runs the sonar loop).
-4. Flash the OpenMV firmware in `src/Camera/main.py` onto the **OpenMV H7**.
+2. Upload the files in `firmware/agsg/` to the **Pico 2** (using the MicroPico VS Code extension, Thonny, or `mpremote`). `main.py` is the entry point.
+3. Upload the contents of `firmware/agsg/SonarSlave/` to the **Pico 1** (`main.py` runs the sonar loop).
+4. Flash the OpenMV firmware in `firmware/agsg/Camera/main.py` onto the **OpenMV H7**.
 5. Power on: the main controller runs `main.py` automatically and starts the obstacle challenge.
 
 The only external dependency is the `bno08x.py` driver, which is included in the repository.
@@ -196,17 +196,29 @@ The only external dependency is the `bno08x.py` driver, which is included in the
 ## 5. Repository Structure
 
 ```
-├── models/        # CAD / 3D-printable and CNC files
-├── other/         # extra files (hardware specs, upload notes, datasets)
-├── schemes/       # wiring diagrams (electromechanical)
-├── src/           # main controller software (MicroPython)
-│   └── SonarSlave/  # sonar controller firmware
-│   └── Camera/      # OpenMV camera firmware
-├── t-photos/      # team photos
-├── v-photos/      # vehicle photos (all sides, top, bottom)
-└── video/         # link to the driving-demonstration video
+├── models/          # CAD / 3D-printable and CNC files
+├── other/           # extra files (hardware specs, upload notes, datasets)
+├── schemes/         # wiring diagrams (electromechanical)
+├── firmware/        # vehicle firmware
+│   ├── agsg/        # main controller software (MicroPython)
+│   │   ├── SonarSlave/   # sonar controller firmware
+│   │   └── Camera/       # OpenMV camera firmware
+│   ├── bench/       # bench calibration scripts
+│   ├── patches/     # documented firmware patches
+│   └── sync_firmware.sh  # refresh the vendored firmware
+├── simulator/       # Python simulator (firmware-in-the-loop)
+├── ui/              # browser UI (physics + scoring)
+├── tools/           # sign sweep / margin report / MicroPython audit
+├── micropython/     # HC-05 Bluetooth setup scripts
+├── t-photos/        # team photos
+├── v-photos/        # vehicle photos (all sides, top, bottom)
+├── video/           # link to the driving-demonstration video
+├── start.sh         # start the simulator
+├── start_ui.py      # start the UI
+├── SIMULATOR.md     # simulator documentation
+└── FIRMWARE_NOTES.md  # firmware findings
 ```
 
 ## 6. Reproducibility
 
-To reproduce this vehicle, another team needs the hardware listed in §2.1, the wiring diagram in `schemes/`, the CAD files in `models/`, and the source code in `src/`. The README and code comments document the module responsibilities and the build/upload process, so the robot can be rebuilt and the software re-flashed from this repository alone.
+To reproduce this vehicle, another team needs the hardware listed in §2.1, the wiring diagram in `schemes/`, the CAD files in `models/`, and the source code in `firmware/agsg/`. The README and code comments document the module responsibilities and the build/upload process, so the robot can be rebuilt and the software re-flashed from this repository alone.

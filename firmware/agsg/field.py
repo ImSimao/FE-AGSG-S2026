@@ -41,6 +41,9 @@ class Lane:
             [0, 0],
         ]
 
+        # The line this lane produced on an earlier lap, as [entry, exit] sides.
+        self.learned = None
+
         if lane_index == 0:
             for zone in self.zones:
                 zone[1] = TrafficSignal.EMPTY
@@ -80,6 +83,51 @@ class Lane:
 
     def can_exit_lane(self):
         return self.can_enter_zone([1, 2])
+
+    def clear_last_zone(self):
+        """Forget the lane's last zone before the car drives it again.
+
+        Zone 2 sits at the far corner, right next to the first sign of the
+        *next* lane. That sign is regularly matched to this lane's last
+        position (up to 18 deg of bearing error, 75 cm away), and because a
+        zone that already holds a colour is never overwritten, it also locked
+        out the lane's own third sign for the rest of the round. The colour
+        left behind on lap 1 was then latched as this lane's exit line on lap
+        2, and the car drove 27 cm outside the red of the top lane.
+        """
+        for position_index in range(2):
+            self.zones[2][position_index] = TrafficSignal.UNKNOWN
+            self.zone_pov_ms[2][position_index] = 0
+
+    def remember(self, sides):
+        """Keep the line this lane produced, for the laps that follow.
+
+        The signs do not move during a round, and a lane the car has already
+        driven correctly has nothing left to learn: stopping again to look for a
+        colour it already knows costs seconds per lane per lap, and the only
+        thing a second look can do is replace a known-good line with a mis-read.
+        """
+        if sides and sides[0] in (1, -1) and sides[1] in (1, -1):
+            self.learned = [sides[0], sides[1]]
+
+    def restore_learned(self):
+        """Put the remembered line back into the table after a lane is reset.
+
+        `learned` holds the sides as lanes_sides() handed them out, i.e. already
+        mirrored for a ccw round. Writing them back as colours has to undo that
+        mirror first: otherwise lanes_sides() mirrors a second time and the lane
+        drives the opposite line on laps two and three. Measured on seed 1234
+        ccw: lane 1 learned [-1, 1], came back as [1, -1], and the car passed the
+        entry sign of that corridor on the wrong side and ended the round.
+        """
+        if not self.learned:
+            return False
+        first, second = self.learned
+        if state.clockwise == -1:
+            first, second = -first, -second
+        self.zones[0][0] = TrafficSignal.GREEN if first == 1 else TrafficSignal.RED
+        self.zones[2][0] = TrafficSignal.GREEN if second == 1 else TrafficSignal.RED
+        return True
 
     def can_register_signal_in_zone(self, zones):
         for zone in zones:
@@ -140,15 +188,12 @@ class Lane:
             sides[1] = sides[0]
 
         if state.clockwise == -1:
-            if sides[0] == -1:
-                sides[0] = 1
-            else:
-                sides[0] = -1
-            
-            if sides[1] == -1:
-                sides[1] = 1
-            else:
-                sides[1] = -1
+            # Mirror the known sides only. Testing `== -1` and falling through to
+            # -1 for everything else turned an unread side (None) into "red"
+            # right here, and the guard below could no longer tell the two apart:
+            # the second corridor took the red line at its first slot with a
+            # green sign standing there, and drove past it on the wrong side.
+            sides = [None if side is None else -side for side in sides]
 
         if sides[0] is None or sides[1] is None:
             sides = [-1, -1]
@@ -182,6 +227,20 @@ class Field:
             zone_index = 2
 
         Field.LANES[state.relative_lane].add_pov_time(zone_index, position_index, dt_ms)
+
+    @staticmethod
+    def prepare_lane():
+        lane = Field.LANES[state.relative_lane]
+        # Drop the contaminated last zone first, then put back the line this lane
+        # gave on an earlier lap: the car then drives laps two and three without
+        # stopping to look for colours it has already seen.
+        lane.clear_last_zone()
+        if lane.restore_learned():
+            Telemetry.log("faixa %d: linha memorizada %s" % (state.relative_lane, lane.learned))
+
+    @staticmethod
+    def remember_lane(sides):
+        Field.LANES[state.relative_lane].remember(sides)
 
     @staticmethod
     def can_enter_lane():

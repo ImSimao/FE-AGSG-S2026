@@ -1,0 +1,7 @@
+simulator/__pycache__/*
+__pycache__/
+.venv/
+race-results.json
+calibration.json
+*.png
+!ui/arena.png

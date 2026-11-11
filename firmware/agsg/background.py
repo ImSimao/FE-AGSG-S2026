@@ -8,6 +8,7 @@ from motor import Motor
 from servo import Servo
 from state import state
 from telemetry import Telemetry
+from ekf import pose_ekf
 
 
 SENSOR_INTERVAL_MS    = 20    # 50 Hz
@@ -15,6 +16,7 @@ CAMERA_INTERVAL_MS    = 20    # 50 Hz (matches the ~30-60 FPS camera frame rate)
 ODOM_INTERVAL_MS      = 10    # 100 Hz
 SPEED_INTERVAL_MS     = 100   # 10 Hz
 TELEMETRY_INTERVAL_MS = 50    # 20 Hz
+EKF_LOG_INTERVAL_MS   = 500   # pose-filter trace, plain-text log only
 ADJUST_ODOM_INTERVAL_MS = 25  # 40 Hz
 LOOP_SLEEP_MS = 1
 
@@ -27,7 +29,7 @@ REVERSE_HOLD_MS = 500
 class CruiseControl:
     """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/150, max_accel=0.425, max_decel=2.25, min_drive_pwm=0.15):
+    def __init__(self, kp=1/150, max_accel=0.35, max_decel=1.125, min_drive_pwm=0.15):
         self.kp = kp
         self.max_accel = max_accel   # max PWM increase per second
         self.max_decel = max_decel   # max PWM decrease per second
@@ -134,21 +136,31 @@ def _adjust_odometry():
     correct_corridor()
     correct_corner()
 
-def update_odom(x_relative, y_relative):
-    #Send all in 1 message:
-    y_offset = abs(y_relative - state.get_relative_odom[1])
-    x_offset = abs(x_relative - state.get_relative_odom[0])
+def _fmt_innov(value):
+    if value is None:
+        return "none"
+    return "%.2f" % value
 
-    max_offset = 20
 
-    if y_offset > max_offset or x_offset > max_offset:
-        Telemetry.log("Skipping odom update because y_offset or x_offset is greater than 10 or 15")
-        Telemetry.log("y_offset: " + str(y_offset) + " | x_offset: " + str(x_offset))
-        return
-
-    Telemetry.log("Previous odom: " + str(state.get_relative_odom[0]) + ", " + str(state.get_relative_odom[1]) + " | Updating relative odom to: " + str(x_relative) + ", " + str(y_relative) + " | Distance offset: " + str(x_relative - state.get_relative_odom[0]) + ", " + str(y_relative - state.get_relative_odom[1]))
-
-    state.set_relative_odom(x_relative, y_relative)
+def update_odom(x_relative, y_relative, observe_x=True, observe_y=True):
+    # Geometric gates in the callers decide that this wall reading is meaningful.
+    # The filter accepts each observed axis on its own Mahalanobis gate.
+    prev_x, prev_y = state.get_relative_odom
+    innov_x, innov_y, accepted_x, accepted_y = pose_ekf.update_relative(
+        x_relative, y_relative, observe_x, observe_y
+    )
+    curr_x, curr_y = state.get_relative_odom
+    Telemetry.log(
+        "ekf odom %.1f,%.1f -> %.1f,%.1f z=(%.1f,%.1f) obs=(%d,%d) innov=(%s,%s) accept=(%d,%d) trace=%.2f"
+        % (
+            prev_x, prev_y, curr_x, curr_y,
+            x_relative, y_relative,
+            1 if observe_x else 0, 1 if observe_y else 0,
+            _fmt_innov(innov_x), _fmt_innov(innov_y),
+            1 if accepted_x else 0, 1 if accepted_y else 0,
+            pose_ekf.trace(),
+        )
+    )
 
 def correct_corner():
     curr_x, curr_y = state.get_relative_odom
@@ -199,7 +211,7 @@ def correct_corner():
 
              #Entered corner from inside
             if curr_x > 60 and curr_y > 40:
-                update_odom(distance_rear, curr_y)
+                update_odom(distance_rear, curr_y, observe_y=False)
                 return
 
 
@@ -238,9 +250,9 @@ def correct_corridor():
 
     if state.is_lane_with_parking:
         if curr_y < 62:
-            if state.clockwise == 1 and curr_x < 140:
+            if state.clockwise == 1 and curr_x < 145:
                 return
-            if state.clockwise == -1 and curr_x > 140:
+            if state.clockwise == -1 and curr_x > 155:
                 return
             
 
@@ -251,14 +263,14 @@ def correct_corridor():
         offset = distance_left
 
 
-        update_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
+        update_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset), observe_x=False)
     else:
         if distance_right > 50 or distance_right <= 3:
             return
 
         offset = distance_right
 
-        update_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset))
+        update_odom(state.get_relative_odom[0], abs((100 if curr_y > 50 else 0) - offset), observe_x=False)
 
 def get_abs_distance(sonar_offset, angle, distance, is_side = False):
 
@@ -310,9 +322,7 @@ def _update_odometry(last_distance_cm):
     current_distance_cm = Encoder.distance_cm()
     delta_cm = current_distance_cm - last_distance_cm
     theta_rad = math.radians(compass_angle)
-
-    state.odom_x += delta_cm * math.cos(theta_rad) * state.clockwise * -1
-    state.odom_y += delta_cm * math.sin(theta_rad) * state.clockwise
+    pose_ekf.predict(delta_cm, theta_rad)
 
     return current_distance_cm
 
@@ -348,6 +358,7 @@ def background_task():
     last_odom_ms = last_sensor_ms
     last_speed_ms = last_sensor_ms
     last_telemetry_ms = last_sensor_ms
+    last_ekf_log_ms = last_sensor_ms
     last_adjust_odom_ms = last_sensor_ms
 
     print("Background task started")
@@ -377,6 +388,11 @@ def background_task():
         if time.ticks_diff(now_ms, last_telemetry_ms) >= TELEMETRY_INTERVAL_MS:
             _send_telemetry()
             last_telemetry_ms = now_ms
+
+        now_ms = time.ticks_ms()
+        if time.ticks_diff(now_ms, last_ekf_log_ms) >= EKF_LOG_INTERVAL_MS:
+            Telemetry.log_ekf(pose_ekf.trace(), pose_ekf.last_innov_x, pose_ekf.last_innov_y)
+            last_ekf_log_ms = now_ms
 
         now_ms = time.ticks_ms()
         if time.ticks_diff(now_ms, last_adjust_odom_ms) >= ADJUST_ODOM_INTERVAL_MS:

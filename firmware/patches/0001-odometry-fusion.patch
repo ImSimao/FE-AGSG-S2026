@@ -1,0 +1,29 @@
+--- /tmp/background_stock.py	2026-11-03 12:50:59.729026714 +0000
++++ firmware/agsg/background.py	2026-11-03 12:50:59.766517439 +0000
+@@ -134,6 +134,9 @@
+     correct_corridor()
+     correct_corner()
+ 
++ODOM_FUSION_K = 0.2  # 0 = ignore the sonar correction, 1 = overwrite with it
++
++
+ def update_odom(x_relative, y_relative):
+     #Send all in 1 message:
+     y_offset = abs(y_relative - state.get_relative_odom[1])
+@@ -148,7 +151,15 @@
+ 
+     Telemetry.log("Previous odom: " + str(state.get_relative_odom[0]) + ", " + str(state.get_relative_odom[1]) + " | Updating relative odom to: " + str(x_relative) + ", " + str(y_relative) + " | Distance offset: " + str(x_relative - state.get_relative_odom[0]) + ", " + str(y_relative - state.get_relative_odom[1]))
+ 
+-    state.set_relative_odom(x_relative, y_relative)
++    # Fuse instead of snapping. The 20 cm gate above already rejects a wild
++    # reading; what is left is a sequence of small corrections, and replacing the
++    # estimate with each one throws away what the encoder and IMU accumulated.
++    # Blending keeps that and pulls the pose towards the wall.
++    cur_x, cur_y = state.get_relative_odom
++    state.set_relative_odom(
++        cur_x + ODOM_FUSION_K * (x_relative - cur_x),
++        cur_y + ODOM_FUSION_K * (y_relative - cur_y),
++    )
+ 
+ def correct_corner():
+     curr_x, curr_y = state.get_relative_odom

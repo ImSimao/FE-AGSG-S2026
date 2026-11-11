@@ -1,0 +1,3 @@
+# Optional extras for headless rounds and the calibration sweep.
+# The UI + controller only need simulator/requirements.txt.
+playwright>=1.40

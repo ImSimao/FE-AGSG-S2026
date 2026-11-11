@@ -3,10 +3,53 @@ import time
 from field import Field
 from machine import UART, Pin
 from state import state
+from telemetry import Telemetry
 
 camera_angle = 70
-camera_distance = 90
+camera_distance = 75
 robot_distance_from_camera = 13.5
+
+# A blob is placed by bearing, not by being first in the list. The list is
+# ordered by the field layout, so "first" meant "the leftmost sign of the lane"
+# whatever the blob was: two signs in one frame both landed on it and the later
+# one won, which is how a green from the next lane overwrote the red at the end
+# of this one and the car drove the green line past a red.
+CAMERA_WIDTH = 160
+CAMERA_FOCAL_PX = 114.0
+MAX_SIGN_ANGLE_DEG = 20.0
+# Past this a 5 cm sign is a few pixels and the colour is a guess.
+MAX_SIGN_DISTANCE_CM = 80.0
+
+
+def blob_bearing_deg(traffic_x):
+    return math.degrees(math.atan2(traffic_x - (CAMERA_WIDTH / 2 - 1), CAMERA_FOCAL_PX))
+
+
+def match_frame(blobs, possible_traffic_positions):
+    """Pair every blob of one frame with at most one lane position."""
+    candidates = []
+    for index, blob in enumerate(blobs):
+        bearing = blob_bearing_deg(blob[0])
+        for position in possible_traffic_positions:
+            if position.get("distance", 0) > MAX_SIGN_DISTANCE_CM:
+                continue
+            error = abs(position["angle"] - bearing)
+            if error <= MAX_SIGN_ANGLE_DEG:
+                candidates.append((error, index, position, bearing))
+
+    candidates.sort(key=lambda item: item[0])
+
+    used_blobs = set()
+    used_positions = set()
+    for error, index, position, bearing in candidates:
+        key = (position["pos"], position["side"])
+        if index in used_blobs or key in used_positions:
+            continue
+        used_blobs.add(index)
+        used_positions.add(key)
+        Telemetry.log("blob %s -> pos %d err %.1f (%.0f cm)"
+                      % (blobs[index][2], position["pos"], error, position.get("distance", 0)))
+        Field.set_signal(position["pos"], position["side"], blobs[index][2])
 
 
 class Camera:
@@ -83,8 +126,7 @@ class Camera:
 
         if new_frame:
             Camera._last_pov_positions = get_traffic_lane_inside_pov()
-            for cx, cy, color in Camera._last_blobs:
-                get_colour_position(cx, cy, color, Camera._last_pov_positions)
+            match_frame(Camera._last_blobs, Camera._last_pov_positions)
 
         
  
@@ -137,10 +179,7 @@ def get_colour_position(traffic_x, traffic_y, signal, possible_traffic_positions
     relative_angle = math.degrees(math.atan2(dy, dx))
     relative_angle = (relative_angle + 180) % 360 - 180
 
-    for position in possible_traffic_positions:
-        #if abs(position["angle"] - relative_angle) <= max_angle_difference:
-        Field.set_signal(position["pos"], position["side"], signal)
-        return
+    match_frame([(traffic_x, traffic_y, signal)], possible_traffic_positions)
 
 
 def get_traffic_lane_inside_pov():
@@ -161,7 +200,14 @@ def get_traffic_lane_inside_pov():
         traffic_coord.append([260, 100, 3, 1])
 
     x, y = state.get_relative_odom
-    angle = math.radians(state.compass_angle_relative)
+    # The compass mirrors in a ccw round (see get_angle_to_rotate): with the raw
+    # value every candidate landed outside the 35 degree half-FOV, match_frame
+    # paired nothing, and the car drove the whole lane without registering a
+    # single colour - the round ended on the first sign, on the wrong side.
+    heading = state.compass_angle_relative
+    if state.clockwise == -1:
+        heading = -heading
+    angle = math.radians(heading)
     x_camera = x + robot_distance_from_camera * math.sin(angle)
     y_camera = y + robot_distance_from_camera * math.cos(angle)
 
@@ -174,7 +220,7 @@ def get_traffic_lane_inside_pov():
         
         if distance <= camera_distance:
            
-            relative_angle = math.degrees(math.atan2(dy, dx)) - state.compass_angle_relative
+            relative_angle = math.degrees(math.atan2(dy, dx)) - heading
             relative_angle = (relative_angle + 180) % 360 - 180
 
             if abs(relative_angle) <= camera_angle / 2:
