@@ -69,9 +69,11 @@ The control software runs on **three programmable boards**: a Raspberry Pi Pico 
 
 The vehicle measures **200 mm (length) × 61 mm (width) × 170 mm (height)** and weighs **610 g**. We aimed for the smallest practical footprint so the robot manoeuvres easily between the walls and obstacles.
 
-The body stays **above** the height of the field walls (100 mm), so it clears low obstacles without touching them, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low: the robot measures **20 cm** below that height, which entitles it to a **30 cm** parking bay. The rest of the body stays above wall level, so the vehicle still clears low obstacles.
+The body stays **above** the height of the field walls (100 mm), so it clears low obstacles without touching them, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low and is now **73 mm** long, so the vehicle's length at that height stays well inside the **30 cm** parking bay. The rest of the body stays above wall level, so the vehicle still clears low obstacles.
 
 **Mass:** the complete vehicle — 3D-printed frame, electronics, battery and motors — weighs **610 g**, about 41 % of the 1.5 kg limit (rule 11.2). That margin leaves room for planned additions such as replacing the two linear regulators with a buck converter, and it keeps the load on the single N20 drive motor and on the steering servo low. The frame is 3D-printed and the electronics sit on a single perfboard deck, which keeps the structure light and easy to modify between test runs.
+
+**Material and stiffness.** The frame is printed in two materials. The **nose and the front suspension are TPU-GF** (glass-fibre-reinforced TPU): the nose has to bend, not snap, when it touches a wall, and the suspension struts have to flex and return — a rigid plastic would crack on the first hit. **Everything else is ASA**, chosen for stiffness and heat resistance: the motor mount, the axle blocks and the gearbox housing hold the 3:5 gear mesh at its measured **0.2 mm backlash** under the N20's torque instead of flexing and letting the gears skip, and the ASA body stays rigid at 610 g with the servo at full lock.
 
 **Vehicle views:**
 
@@ -474,7 +476,7 @@ Last year we used a Raspberry Pi Zero with a Pi Camera, but its Linux boot time 
 We chose **ultrasonic (SRF04)** over LiDAR or IR distance sensors because we cannot know the reflectivity and colour of the competition walls in advance — LiDAR and IR depend on those surface properties, so their readings can vary with the wall. Ultrasonic is less accurate, but its measurements are more **consistent across different wall conditions**, which matters more for reliable driving.
 
 **10. Steering servo — SG90 → Savox SH-0255 MG**
-We first used a micro 9g SG90 servo, but its gears broke — both the plastic-gear and the metal-gear versions. We switched to the **Savox SH-0255 MG**, which has metal gears and less play, and it has worked reliably so far.
+We first used a micro 9g SG90 servo; its gears broke — both the plastic-gear and the metal-gear versions — under the steering load. We did not run a measured lifetime test on the SG90: the failure was the trigger, and we switched to the **Savox SH-0255 MG** (metal gears, less play), which has held up since.
 
 ### 5.3 Iteration history
 
