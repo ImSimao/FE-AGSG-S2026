@@ -8,11 +8,15 @@
 
 **Age:** 19 · **University:** Faculdade de Medicina da Universidade de Lisboa, Lisboa, Portugal · **Role:** Computer vision and sensor integration
 
+![Joana Silva](t-photos/joana.jpg)
+
 Hi, I'm Joana from Portugal and this is my fourth season of WRO. I've participated in this category before, but as I find it extremely challenging, there's always something to improve on. I've enjoyed challenges ever since I was little and this is another one that connects what I love: programming and robotics. My expertise in this team focuses on computer vision algorithms and sensor integration.
 
 ### Simão Freire
 
 **Age:** 21 · **University:** Instituto Superior de Engenharia de Lisboa, Lisboa, Portugal · **Role:** Embedded systems programming and mechanical design
+
+![Simão Freire](t-photos/simao.jpg)
 
 Hi! My name is Simão and ever since I was a kid, I've been interested in computers and how they work, that led me to the path of wanting to learn more about programming and so I joined the robotics club of my school. This will be my third season in WRO and I'm really looking forward to it! I specialize in embedded systems programming and mechanical design.
 
@@ -24,7 +28,7 @@ I'm a hardworking, goal-oriented young man. Challenges captivate me and the hard
 
 ### Team photo
 
-The official team photo is stored in [`t-photos/`](t-photos/).
+![AGSG team — Joana Silva, Simão Freire and coach Tiago Severino](t-photos/TeamPhoto.jpg)
 
 ## Table of contents
 
@@ -84,9 +88,19 @@ The motor and the logic/sensor rails are separated so that motor current spikes 
 
 The vehicle measures **287 mm (length) × 61 mm (width) × 170 mm (height)**. We aimed to keep the vehicle compact so that it manoeuvres easily around the field without hitting walls or obstacles.
 
-The front of the body is a raised section that stays **above** the walls and obstacles, while the lower part of the chassis — the part that interacts with the field elements — is only **127 mm** long. This keeps the vehicle short at wall level and gives extra clearance over low obstacles.
+The body stays **above** the walls and obstacles, so the vehicle clears low obstacles, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low: the robot measures **20 cm** below that height, which entitles it to a **30 cm** parking bay.
 
 The drivetrain is a single rear **DC motor (N20, 1000 RPM) with a quadrature encoder**, driving the rear axle through a **3:5 gear reduction** and a **metal RC differential**, which lets the two rear wheels rotate at different speeds through corners. The front wheels use **Ackermann steering** driven by a single **servo**. The encoder provides odometry (distance travelled), and the BNO085 IMU provides heading, so the robot navigates with a closed-loop position estimate.
+
+### 2.4 Vehicle photos
+
+| Front | Back | Top |
+|---|---|---|
+| ![Front](v-photos/front.jpg) | ![Back](v-photos/back.jpg) | ![Top](v-photos/top.jpg) |
+
+| Left | Right | Bottom |
+|---|---|---|
+| ![Left](v-photos/left.jpg) | ![Right](v-photos/right.jpg) | ![Bottom](v-photos/bottom.jpg) |
 
 ## 3. Software Architecture
 
