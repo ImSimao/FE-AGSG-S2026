@@ -14,6 +14,7 @@
    - [2.2 Drive train](#22-drive-train)
    - [2.3 Steering](#23-steering)
    - [2.4 Motor selection and speed reasoning](#24-motor-selection-and-speed-reasoning)
+   - [2.5 Suspension](#25-suspension)
 3. [Power & Sensor Architecture](#3-power--sensor-architecture)
    - [3.1 Power distribution](#31-power-distribution)
    - [3.2 Power budget](#32-power-budget)
@@ -104,9 +105,21 @@ The drivetrain is built from:
 | Motor | 1 | 11 mm | 3 mm | 7 mm |
 | Front wheels | 2 | 8 mm | 4 mm | 3 mm |
 
+**Rear axle** (driven by the differential, with its two bearings):
+
+<div align="center">
+    <img src="other/img/rear_axle.jpg" width="500" alt="Rear axle assembly">
+</div>
+
 ### 2.3 Steering
 
 The front wheels use **Ackermann steering geometry**, driven by a single **Savox SH-0255 MG servo**. We chose this servo for its metal gears and low play (backlash): a micro 9g SG90 servo (both plastic and metal-gear versions) broke under load, while the Savox has held up reliably. Ackermann geometry makes the inner wheel turn more sharply than the outer wheel in a corner, so the wheels roll without slipping — this is important because our odometry assumes the wheels do not slip.
+
+**Front axle** (Ackermann steering and pivots):
+
+<div align="center">
+    <img src="other/img/front_axle.jpg" width="500" alt="Front axle with Ackermann steering">
+</div>
 
 ### 2.4 Motor selection and speed reasoning
 
@@ -132,6 +145,14 @@ wheel speed (cm/s) = wheel RPM × π × 3.2 cm / 60
 At rated speed the 1000 RPM motor gives ~77 cm/s at the wheel; no-load gives ~100 cm/s. We run at a target speed of **45–60 cm/s**, below the rated speed, so the motor keeps torque reserve for acceleration and the wheels do not slip.
 
 **Measured currents (N20 1000 RPM):** no-load 75 mA, load 0.3 A, stall 0.9 A.
+
+### 2.5 Suspension
+
+The front and rear axles are carried by a 3D-printed suspension (struts, pivots and axle sleeves — see `models/`), which keeps the wheels in contact with the track. The animation below demonstrates how it moves:
+
+<div align="center">
+    <img src="other/img/suspension.gif" width="500" alt="Suspension movement">
+</div>
 
 ---
 
