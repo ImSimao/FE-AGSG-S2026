@@ -474,7 +474,7 @@ The commit history shows the development over time, and the README plus code com
 ### Artefacts (team)
 
 5. Driving video (`video/`) — one YouTube link per challenge, ≥30 s autonomous.
-6. CAD files in `models/`.
+6. CAD files in `models/` — done: 27 STEP files (chassis, axles, wheels, bearings, supports and housing).
 
 ### Measurements to publish (from test runs)
 
