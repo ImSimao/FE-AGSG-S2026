@@ -110,7 +110,6 @@ The drivetrain is built from:
 | Wheel width | 9 mm | |
 | Wheelbase | 70 mm | steering radius R = L / tan(δ) |
 | Steering arm offset | 10 mm | |
-| Wheel footprint length | 102 mm | wheelbase + wheel Ø (total length incl. nose is 200 mm, §2.1) |
 
 **Bearings:**
 
