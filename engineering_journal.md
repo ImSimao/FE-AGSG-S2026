@@ -96,6 +96,22 @@ The drivetrain is built from:
 | Differential | **Metal RC differential (Wltoys 144001 type)** | lets the two rear wheels rotate at different speeds through corners |
 | Rear axle | driven by the differential | — |
 
+**Design parameters** (from the CAD model in `models/`):
+
+| Parameter | Value | Notes |
+|---|---|---|
+| Motor gear PCD | 16.2 mm | pitch circle diameter |
+| Housing gear PCD | 27 mm | pitch circle diameter |
+| Gear teeth | 30 (motor) / 50 (housing) | 3:5 ratio (wheel turns 3/5 of the motor) |
+| Gear backlash | 0.2 mm | |
+| Gear thickness | 5 mm | |
+| Axle width | 61 mm | measured |
+| Wheel diameter | 32 mm | used in odometry (33.2 counts/cm) |
+| Wheel width | 9 mm | |
+| Wheelbase | 70 mm | steering radius R = L / tan(δ) |
+| Steering arm offset | 10 mm | |
+| Wheel footprint length | 102 mm | wheelbase + wheel Ø (total length incl. nose is 200 mm, §2.1) |
+
 **Bearings:**
 
 | Location | Count | OD | Width | ID |
