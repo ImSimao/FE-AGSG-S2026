@@ -66,7 +66,7 @@ The control software runs on **three programmable boards**: a Raspberry Pi Pico 
 
 The vehicle measures **287 mm (length) × 61 mm (width) × 170 mm (height)**. We aimed for the smallest practical footprint so the robot manoeuvres easily between the walls and obstacles.
 
-The front of the body is a raised section that stays **above** the height of the field walls (100 mm), so it passes over low obstacles without touching them. The lower part of the chassis — the part that interacts with the field elements — is only **127 mm** long. This keeps the vehicle short at wall level while the raised section provides clearance over low obstacles.
+The body stays **above** the height of the field walls (100 mm), so it clears low obstacles without touching them, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low: the robot measures **20 cm** below that height, which entitles it to a **30 cm** parking bay. The rest of the body stays above wall level, so the vehicle still clears low obstacles.
 
 **Vehicle views:**
 
@@ -380,8 +380,8 @@ The incremental cruise controller could drive the motor PWM negative during dece
 **5. Motor and gearing choice**
 We chose a **1000 RPM N20 with a 3:5 reduction** so the wheel turns at 600 RPM — enough top speed (~100 cm/s theoretical) while keeping torque reserve, and we run well below the maximum (45–60 cm/s) for control stability.
 
-**6. Raised front section**
-The raised front passes over low obstacles without touching them, keeping the lower chassis short (127 mm). This is a mechanical decision, not a software one, and it is described in §2.1.
+**6. Front nose and the parking-length rule**
+We originally kept the front raised above the field walls so it would pass over low obstacles. A rule clarification then stated that the parking length is measured at the height below the track wall (10 cm), so we added a **nose close to the ground** at the front. This keeps the measured length at 20 cm, which entitles the robot to a 30 cm parking bay. This is a mechanical decision, described in §2.1.
 
 **7. Heading sensor — CMPS12 → BNO085**
 Last year we used a CMPS12 compass module, but the magnetic fields in the competition environment made the heading unreliable. We switched to the **BNO085**, which uses a fused game rotation vector without a magnetometer, giving a stable heading that is unaffected by magnetic interference.
