@@ -77,7 +77,9 @@ def match_frame(blobs, possible_traffic_positions):
             key = (position["pos"], position["side"])
             if key in used_positions:
                 continue
-            d = math.hypot(sign_x - position["x"], sign_y - position["y"])
+            dx = sign_x - position["x"]
+            dy = sign_y - position["y"]
+            d = math.sqrt(dx * dx + dy * dy)  # math.hypot is missing in MicroPython
             if d <= MATCH_RADIUS_CM and (best_d is None or d < best_d):
                 best = position
                 best_d = d
