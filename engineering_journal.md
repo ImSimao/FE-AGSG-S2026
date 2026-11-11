@@ -374,7 +374,7 @@ The encoder signal is the most sensitive part of the system. The motor produces 
 | --- | --- |
 | Odometry error vs ground truth | median **2.8 cm**, max per round **6.9 cm** (worst 9.5 cm); stationary median 2.4 cm, max 4.8 cm |
 | Obstacle challenge score | **62/62** on several seeds; **40 of 53** sign layouts |
-| Round time | 112–122 s (seed A), 128 s at 2× (seed B), median 133 s (sign sweep) |
+| Round time (on the car) | obstacle ~**150 s ± 10 s**, open ~**80 s ± 10 s** |
 | Parking | **1.8.2** (complete and parallel) in all rounds that finish |
 | Top speed | ~77 cm/s rated at the wheel (1000 RPM N20 + 3:5); run at 45–60 cm/s |
 | IMU heading drift | ~1° per lap (BNO085 game rotation vector, §3.5) |
