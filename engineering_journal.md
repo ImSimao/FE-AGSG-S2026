@@ -148,7 +148,7 @@ At rated speed the 1000 RPM motor gives ~77 cm/s at the wheel; no-load gives ~10
 
 ### 2.5 Suspension
 
-The front and rear axles are carried by a 3D-printed suspension (struts, pivots and axle sleeves — see `models/`), which keeps the wheels in contact with the track. The animation below demonstrates how it moves:
+The front axle has a 3D-printed suspension (struts, pivots and axle sleeves — see `models/`) that keeps the front wheels in contact with the track; the rear axle is fixed. The animation below demonstrates how the front suspension moves:
 
 <div align="center">
     <img src="other/img/suspension.gif" width="500" alt="Suspension movement">
