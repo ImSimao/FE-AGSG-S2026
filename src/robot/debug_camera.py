@@ -7,24 +7,22 @@ freq(int(2.5 * 100_000_000))
 from camera import Camera, _camera_pose, robot_distance_from_camera
 from compass import Compass
 from encoder import Encoder
+from ekf import pose_ekf
 from state import state
 
 # Camera.update() only reads UART when clockwise != 0
 state.clockwise = 1
 state.current_lane = 0
 
-# --- track the robot from the encoder + IMU, so the field position of a FIXED
-#     sign stays put while the robot moves.
-h0 = Compass.heading()          # heading at the start == 0 deg (facing +x)
+# Start pose: x=150, y=60, heading 0 (facing +x). The EKF keeps the position.
+h0 = Compass.heading()          # heading at start == 0 deg
 state.compass_angle = 0.0
-x_true, y_true = 150.0, 60.0
-state.odom_x = 303 - x_true     # lane 0, clockwise +1
-state.odom_y = y_true
+state.set_relative_odom(150, 60)   # also resets the EKF covariance
 last_dist = Encoder.distance_cm()
 
 Camera.initialize(uart_id=1, rx_pin=9)
 
-print("Debug camera - obstacle coordinates (tracking encoder + IMU)")
+print("Debug camera - obstacle coordinates (EKF pose)")
 print("Start pose: x=150 y=60 heading=0 (clockwise=1)")
 print("")
 
@@ -32,7 +30,7 @@ last_key = None
 
 
 def update_pose():
-    """Integrate the encoder delta along the current heading (heading 0 = +x)."""
+    """Advance the EKF with the encoder delta and the IMU heading."""
     global last_dist
     dist = Encoder.distance_cm()
     delta = dist - last_dist
@@ -40,14 +38,7 @@ def update_pose():
 
     h = Compass.heading() - h0
     state.compass_angle = h
-    rad = math.radians(h)
-
-    x = 303 - state.odom_x
-    y = state.odom_y
-    x += delta * math.cos(rad)
-    y += delta * math.sin(rad)
-    state.odom_x = 303 - x
-    state.odom_y = y
+    pose_ekf.predict(delta, math.radians(h))
 
 
 while True:
