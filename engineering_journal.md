@@ -368,6 +368,19 @@ The encoder signal is the most sensitive part of the system. The motor produces 
 - **Steering limits** — the maximum steering offset was set to the **largest value that does not strain the servo**.
 - **Validation** — we validate with long runs (e.g. **10 consecutive laps**) and require them to never fail; we drive the robot to known coordinates and **measure** the reached position to confirm accuracy; and we measure the **final position error when running on odometry alone** (without the sonar corrections) to quantify the drift.
 
+**Measured results** (firmware-in-the-loop simulator, see `src/simulator/README.md`):
+
+| Metric | Value |
+| --- | --- |
+| Odometry error vs ground truth | median **2.8 cm**, max per round **6.9 cm** (worst 9.5 cm); stationary median 2.4 cm, max 4.8 cm |
+| Obstacle challenge score | **62/62** on several seeds; **40 of 53** sign layouts |
+| Round time | 112–122 s (seed A), 128 s at 2× (seed B), median 133 s (sign sweep) |
+| Parking | **1.8.2** (complete and parallel) in all rounds that finish |
+| Top speed | ~77 cm/s rated at the wheel (1000 RPM N20 + 3:5); run at 45–60 cm/s |
+| IMU heading drift | ~1° per lap (BNO085 game rotation vector, §3.5) |
+
+Still to measure on the bench: PID step response, camera colour-threshold false-positive rate, sonar frame-loss rate, and the top speed under load.
+
 ### 4.10 Simulator (firmware-in-the-loop) and validation
 
 Rather than guessing whether a firmware change helps, we built a **firmware-in-the-loop simulator** so every change is scored by the same WRO 2026 table the judges use. Before it, a change was judged "feels better" after a few manual runs; now it is judged by its score, lap time, odometry error and wall/sign margin, on a reproducible track.
@@ -492,21 +505,21 @@ The commit history shows the development over time, and the README plus code com
 1. **Bluetooth (debug only)** — the HC-06 is used only for debugging and is physically removed during competition rounds; the telemetry path is disabled for rounds (rule 11.10).
 2. **Start button** — add a start button (rules 9.10–9.11) and document the single power switch.
 3. **Weight** — done: measured **610 g** (limit 1.5 kg, rule 11.2); recorded in §2.1.
-4. **English** — translate the remaining Portuguese comments/prints in `src/robot/` (chapter 7).
+4. **English** — done: the code (robot and simulator) is fully in English.
 
 ### Artefacts (team)
 
-5. Driving video (`video/`) — one YouTube link per challenge, ≥30 s autonomous.
-6. CAD files in `models/` — done: 27 STEP files (chassis, axles, wheels, bearings, supports and housing).
+5. Driving video (`video/`) — done: obstacle and open challenge links.
+6. CAD files in `models/` — done: 27 parts, each in STEP and STL.
 
 ### Measurements to publish (from test runs)
 
-7. Test metrics: N runs → success/failure, time per lap, cross-track error (RMS + max), drift cm/lap without sonar correction, final parking error.
-8. PID tuning data (overshoot vs steady-state error, or step response).
-9. Camera colour-threshold false-positive rates (red vs green, different lighting).
-10. Sonar protocol frame-loss rate.
-11. IMU heading drift (°/min) and the resulting position error per lap.
-12. Measured top speed under load (§2.4).
+7. Test metrics — partly done: score (62/62), round time and odometry error (median 2.8 cm) are recorded in §4.9; cross-track error and drift-per-lap still to publish.
+8. PID tuning data (overshoot vs steady-state, or step response) — to measure.
+9. Camera colour-threshold false-positive rates (red vs green, different lighting) — to measure.
+10. Sonar protocol frame-loss rate — to measure.
+11. IMU heading drift — done: ~1° per lap (§3.5); drift in °/min still to measure.
+12. Measured top speed under load — to measure (rated ~77 cm/s, §2.4).
 
 ### Open Challenge
 
