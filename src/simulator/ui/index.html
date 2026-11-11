@@ -42,41 +42,41 @@
 
   <section class="race-panel" id="racePanel">
     <div class="race-head">
-      <h2>Prova · WRO FE 2026 (Obstacle)</h2>
+      <h2>Round · WRO FE 2026 (Obstacle)</h2>
       <span id="racePhase" class="badge">idle</span>
     </div>
     <div class="race-grid">
-      <div class="race-metric"><span class="label">Tempo</span><span id="raceTime" class="value">0.0 s</span></div>
-      <div class="race-metric"><span class="label">Voltas</span><span id="raceLaps" class="value">0/3</span></div>
-      <div class="race-metric"><span class="label">Secções</span><span id="raceSections" class="value">0</span></div>
-      <div class="race-metric"><span class="label">Pontos</span><span id="raceScore" class="value">0</span></div>
-      <div class="race-metric"><span class="label">Sentido</span><span id="raceDirection" class="value">—</span></div>
-      <div class="race-metric"><span class="label">Secção</span><span id="raceSection" class="value">—</span></div>
-      <div class="race-metric"><span class="label">Erro odometria</span><span id="raceGhost" class="value">—</span></div>
+      <div class="race-metric"><span class="label">Time</span><span id="raceTime" class="value">0.0 s</span></div>
+      <div class="race-metric"><span class="label">Laps</span><span id="raceLaps" class="value">0/3</span></div>
+      <div class="race-metric"><span class="label">Sections</span><span id="raceSections" class="value">0</span></div>
+      <div class="race-metric"><span class="label">Points</span><span id="raceScore" class="value">0</span></div>
+      <div class="race-metric"><span class="label">Direction</span><span id="raceDirection" class="value">—</span></div>
+      <div class="race-metric"><span class="label">Section</span><span id="raceSection" class="value">—</span></div>
+      <div class="race-metric"><span class="label">Odometry error</span><span id="raceGhost" class="value">—</span></div>
     </div>
     <div class="race-actions">
-      <button id="newTrackBtn">Nova pista</button>
-      <button id="repeatTrackBtn">Repetir pista</button>
-      <button id="noiseBtn" aria-pressed="true">Ruído: On</button>
+      <button id="newTrackBtn">New track</button>
+      <button id="repeatTrackBtn">Repeat track</button>
+      <button id="noiseBtn" aria-pressed="true">Noise: On</button>
       <button id="speedBtn" aria-pressed="false">1×</button>
-      <button id="exportJsonBtn" title="Descarregar a prova em JSON">Exportar</button>
-      <button id="exportCsvBtn" title="Descarregar a trajectória em CSV">CSV</button>
+      <button id="exportJsonBtn" title="Download the round as JSON">Export</button>
+      <button id="exportCsvBtn" title="Download the trajectory as CSV">CSV</button>
       <span id="raceSeed" class="race-seed">seed —</span>
     </div>
     <div id="replayBar" class="replay-bar" hidden>
-      <button id="replayEnter" title="Ver a corrida gravada">Replay</button>
-      <button id="replayBack" title="Frame anterior">◀|</button>
-      <button id="replayPlay" title="Reproduzir / pausar">▶</button>
-      <button id="replayFwd" title="Frame seguinte">|▶</button>
-      <select id="replaySpeed" title="Velocidade do replay">
+      <button id="replayEnter" title="Watch the recorded round">Replay</button>
+      <button id="replayBack" title="Previous frame">◀|</button>
+      <button id="replayPlay" title="Play / pause">▶</button>
+      <button id="replayFwd" title="Next frame">|▶</button>
+      <select id="replaySpeed" title="Replay speed">
         <option value="1">1x</option>
         <option value="2">2x</option>
         <option value="4">4x</option>
       </select>
       <input id="replaySlider" type="range" min="0" max="0" value="0" step="1" />
-      <span id="replayTime" class="replay-time">0,0 s</span>
+      <span id="replayTime" class="replay-time">0.0 s</span>
     </div>
-    <div id="signReadout" class="sign-readout">Sinais detetados: —</div>
+    <div id="signReadout" class="sign-readout">Signs detected: —</div>
     <div id="raceFlags" class="race-flags"></div>
     <pre id="raceBreakdown" class="race-breakdown"></pre>
   </section>

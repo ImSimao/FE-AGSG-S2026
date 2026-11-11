@@ -127,7 +127,7 @@ class AgsgController:
     if not (self.server.is_connected() and not self.restart_requested):
       return
     await self.server.send_log(
-      "AGSG firmware: programa terminou; o carro fica parado até «Repetir pista»"
+      "AGSG firmware: program ended; the car stays stopped until «Repeat track»"
     )
     while self.server.is_connected() and not self.restart_requested:
       await asyncio.sleep(0.1)
@@ -150,7 +150,7 @@ class AgsgController:
     except Exception:  # noqa: BLE001 - the revision is documentation, not control
       revision = ""
     await self.server.send_log(
-      "AGSG firmware: a arrancar (actuator=%s, wheelbase=%.0f mm, imu=%+g, servo=%+g%s)"
+      "AGSG firmware: starting (actuator=%s, wheelbase=%.0f mm, imu=%+g, servo=%+g%s)"
       % (cfg.actuator, cfg.wheelbase_m * 1000, cfg.imu_sign, cfg.servo_sign, revision)
     )
 
@@ -190,7 +190,7 @@ class AgsgController:
       await asyncio.sleep(0.02)
 
     if not self.proc.running:
-      await server.send_log("AGSG firmware: falhou a arrancar (%s)" % (self.proc.exit_note or "sem detalhe"))
+      await server.send_log("AGSG firmware: failed to start (%s)" % (self.proc.exit_note or "no detail"))
       return False
 
     # Wait for the world's sensor stream to actually flow before releasing the
@@ -209,7 +209,7 @@ class AgsgController:
       await asyncio.sleep(0.02)
     if not ready:
       await server.send_log(
-        "AGSG firmware: stream de sensores nao chegou; a arrancar mesmo assim"
+        "AGSG firmware: sensor stream did not arrive; starting anyway"
       )
 
     # Tell the clock where it is before releasing the state machine, so the
@@ -418,7 +418,7 @@ class AgsgController:
       self._pending_ticks = [t for t in self._pending_ticks if not t.done()]
       return
     if kind == "race":
-      # A "nova pista" / "repetir pista" asks for a fresh interpreter; the same
+      # A "new track" / "repeat track" asks for a fresh interpreter; the same
       # message can carry sign-convention overrides for the next round.
       if payload.get("action") == "reset":
         # The world is about to restart from the parking pose. Throw away every

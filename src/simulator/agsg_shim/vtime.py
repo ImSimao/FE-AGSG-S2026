@@ -101,7 +101,7 @@ class VirtualClock:
         self._stalls += 1
         if self._stalls <= 3:
           _sys.stderr.write(
-            "[vtime] relogio simulado parado (pedido %.0f ms, sim %.0f ms); a dormir em tempo real\n"
+            "[vtime] simulated clock paused (requested %.0f ms, sim %.0f ms); sleeping in real time\n"
             % (seconds * 1000.0, self._sim_ms))
           _sys.stderr.flush()
         _real_time.sleep(seconds / self._scale)

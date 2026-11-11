@@ -532,7 +532,7 @@ export function createWsTelemetry({ log, simulator, url = null } = {}) {
     ghostHeadingOffset = null;
     appState.ghostPose = null;
     appState.ghostErrorMeters = null;
-    // The simulated clock restarts at zero on «Repetir pista» / «Nova pista», but
+    // The simulated clock restarts at zero on «Repeat track» / «New track», but
     // the stream due-times are expressed in simulated milliseconds and survive
     // it. Left alone they sit at ~150000 from the finished round, every stream
     // is "not due yet" for the whole next round, and the firmware starts with no

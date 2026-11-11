@@ -36,8 +36,8 @@ def main():
         lane, _, pattern = name.partition("_")
         by_group[lane].append((pattern, row))
 
-    print(f"{len(rows)} casos\n")
-    header = f"{'padrão':<12}" + "".join(f"{g:>14}" for g in ("bottom", "left", "top", "right"))
+    print(f"{len(rows)} cases\n")
+    header = f"{'pattern':<12}" + "".join(f"{g:>14}" for g in ("bottom", "left", "top", "right"))
     print(header)
     patterns = sorted({p for g in by_group.values() for p, _ in g})
     for pattern in patterns:
@@ -52,7 +52,7 @@ def main():
                 cells.append(f"{hit['score']:>3} pts {hit['sections']:>2}s".rjust(14))
         print(f"{pattern:<12}" + "".join(cells))
 
-    print("\nfalhas, com o sinal e o sítio:")
+    print("\nfailures, with the sign and the site:")
     for name, row in sorted(rows.items()):
         if row["score"] >= 62:
             continue
@@ -61,15 +61,15 @@ def main():
         detail = ""
         if wrong:
             w = wrong[0]
-            detail = "%s %s em (%s,%s) passado %s com o carro em (%s,%s)" % (
+            detail = "%s %s at (%s,%s) passed %s with the car at (%s,%s)" % (
                 w["colour"], w.get("lane"), w["sign_x_cm"], w["sign_y_cm"],
                 w["side"], w["car_x_cm"], w["car_y_cm"],
             )
         flags = []
         if row.get("wallMoved"):
-            flags.append("parede movida")
+            flags.append("wall moved")
         if row.get("signsMoved"):
-            flags.append("sinais movidos")
+            flags.append("signs moved")
         print(
             "  %-16s %2d pts %2d sec %5.1fs park=%-5s %s %s"
             % (name, row["score"], row["sections"], row["seconds"],

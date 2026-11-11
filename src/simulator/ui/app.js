@@ -275,15 +275,15 @@ function renderSignReadout() {
   if (!dom.signReadout) return;
   const signs = appState.detectedSigns || [];
   if (!signs.length) {
-    dom.signReadout.textContent = "Sinais detetados: —";
+    dom.signReadout.textContent = "Signs detected: —";
     return;
   }
   const parts = signs.map((s) => {
-    const colour = s.state === 1 ? "verde" : "vermelho";
+    const colour = s.state === 1 ? "green" : "red";
     const pos = `${(s.x * 100).toFixed(0)},${(s.y * 100).toFixed(0)}`;
     return `${colour} @ ${pos} cm (${(s.distance * 100).toFixed(0)} cm, ${s.angleDeg.toFixed(0)}°)`;
   });
-  dom.signReadout.textContent = `Sinais detetados: ${parts.join("  ·  ")}`;
+  dom.signReadout.textContent = `Signs detected: ${parts.join("  ·  ")}`;
 }
 
 function renderRaceUpdate(u) {
@@ -296,8 +296,8 @@ function renderRaceUpdate(u) {
   if (dom.raceDirection) {
     dom.raceDirection.textContent = u.direction
       ? u.direction === "ccw"
-        ? "anti-horário"
-        : "horário"
+        ? "counter-clockwise"
+        : "clockwise"
       : "—";
   }
   if (dom.raceSection) dom.raceSection.textContent = u.sectionLabel || "—";
@@ -308,12 +308,12 @@ function renderRaceUpdate(u) {
   }
   if (dom.raceFlags) {
     const flags = [];
-    if (u.startInParking) flags.push("arranque no parque");
-    if (u.signsMoved) flags.push("sinais movidos");
-    if (u.wallMoved) flags.push("parede movida → 0");
-    if (u.parking) flags.push(`estacionamento ${u.parking}`);
-    if (u.timedOut) flags.push("tempo esgotado");
-    if (u.signWrongSide) flags.push("sinal do lado errado");
+    if (u.startInParking) flags.push("start in parking");
+    if (u.signsMoved) flags.push("signs moved");
+    if (u.wallMoved) flags.push("wall moved → 0");
+    if (u.parking) flags.push(`parking ${u.parking}`);
+    if (u.timedOut) flags.push("time out");
+    if (u.signWrongSide) flags.push("sign on the wrong side");
     dom.raceFlags.textContent = flags.join(" · ");
   }
 }
@@ -334,14 +334,14 @@ function renderRaceFinished(result) {
       (b) => `${String(b.code).padEnd(6)} ${String(b.points).padStart(3)}  ${b.label}`
     );
     const total = `${"".padEnd(6)} ${String(result.score).padStart(3)}  TOTAL${
-      result.wallMoved ? "  (parede movida: ronda a zero)" : ""
+      result.wallMoved ? "  (wall moved: round zeroed)" : ""
     }`;
-    const meta = `tempo ${(result.elapsedMs / 1000).toFixed(1)} s · voltas ${result.laps} · ${
+    const meta = `time ${(result.elapsedMs / 1000).toFixed(1)} s · laps ${result.laps} · ${
       result.distanceMeters ?? "—"
-    } m · sentido ${result.direction ?? "—"}`;
+    } m · direction ${result.direction ?? "—"}`;
     dom.raceBreakdown.textContent = [meta, "", ...lines, "", total].join("\n");
   }
-  notify(`Prova terminada: ${result.score} pontos`, {
+  notify(`Round finished: ${result.score} points`, {
     variant: result.score >= 40 ? "info" : "warning",
   });
 }
@@ -376,7 +376,7 @@ function applyFieldSigns(spec) {
 function applyUrlField() {
   if (!config.fieldSigns?.length) return 0;
   const placed = applyFieldSigns(config.fieldSigns);
-  log(`Campo do URL: ${placed} sinais.`);
+  log(`URL field: ${placed} signs.`);
   return placed;
 }
 
@@ -402,10 +402,10 @@ function toggleNoise() {
   config.telemetryNoise.enabled = on;
   appState.realWorldMode = on;
   if (dom.noiseBtn) {
-    dom.noiseBtn.textContent = `Ruído: ${on ? "On" : "Off"}`;
+    dom.noiseBtn.textContent = `Noise: ${on ? "On" : "Off"}`;
     dom.noiseBtn.setAttribute("aria-pressed", String(on));
   }
-  log(on ? "Sensores com ruído (modo prova)." : "Sensores ideais (modo treino).");
+  log(on ? "Sensors with noise (competition mode)." : "Ideal sensors (training mode).");
 }
 
 function toggleSpeed() {
@@ -421,7 +421,7 @@ function toggleSpeed() {
     dom.speedBtn.textContent = `${appState.simScale}×`;
     dom.speedBtn.setAttribute("aria-pressed", String(appState.simScale > 1));
   }
-  log(`Velocidade da simulação: ${appState.simScale}×.`);
+  log(`Simulation speed: ${appState.simScale}×.`);
 }
 
 function handleCanvasClick(e) {
@@ -669,7 +669,7 @@ function wireEvents() {
 
   function replayEnter() {
     const frames = replayFrames();
-    if (!frames.length) { log("Nada gravado nesta corrida."); return; }
+    if (!frames.length) { log("Nothing recorded in this run."); return; }
     appState.replayMode = true;
     if (dom.replayBar) dom.replayBar.hidden = false;
     syncReplaySlider();
@@ -702,7 +702,7 @@ function wireEvents() {
     if (format === "csv") {
       const head = "t_ms,x_cm,y_cm,heading_deg,speed_cm_s";
       const body = frames.map((f) => [f.t_ms, f.x_cm, f.y_cm, f.heading_deg, f.speed_cm_s].join(","));
-      downloadFile(`prova-${config.seed ?? "seed"}-${stamp()}.csv`, [head, ...body].join("\n"), "text/csv");
+      downloadFile(`round-${config.seed ?? "seed"}-${stamp()}.csv`, [head, ...body].join("\n"), "text/csv");
       return;
     }
 
@@ -757,7 +757,7 @@ function wireEvents() {
       trajectory: frames,
       log: logText,
     };
-    downloadFile(`prova-${config.seed ?? "seed"}-${stamp()}.json`, JSON.stringify(payload, null, 2), "application/json");
+    downloadFile(`round-${config.seed ?? "seed"}-${stamp()}.json`, JSON.stringify(payload, null, 2), "application/json");
   }
 
   function detectedSignsSnapshot() {
@@ -780,7 +780,7 @@ function wireEvents() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    log(`Prova exportada: ${name}`);
+    log(`Round exported: ${name}`);
   }
 
   dom.exportJsonBtn?.addEventListener("click", () => raceExport("json"));
@@ -865,7 +865,7 @@ function init() {
   if (dom.raceSeed) dom.raceSeed.textContent = `seed ${appState.trackSeed}`;
   if (dom.noiseBtn) {
     const on = Boolean(config.telemetryNoise.enabled);
-    dom.noiseBtn.textContent = `Ruído: ${on ? "On" : "Off"}`;
+    dom.noiseBtn.textContent = `Noise: ${on ? "On" : "Off"}`;
     dom.noiseBtn.setAttribute("aria-pressed", String(on));
     // Scored runs use the real sensor model too: a ±15° cone instead of a single
     // ray, otherwise the ultrasonic stream is more optimistic than the hardware.

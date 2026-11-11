@@ -95,7 +95,7 @@ export function createSimulator({ log }) {
 
   function markRaceStart(pose) {
     if (!pose) return;
-    appState.steerActualDeg = 0; // a folga arranca sempre do zero
+    appState.steerActualDeg = 0; // slack always starts from zero
     appState.steerContact = 0;
     appState.raceStartPose = { x: pose.x, y: pose.y, headingDeg: pose.headingDeg };
     appState.raceStartHeading = pose.headingDeg;
@@ -309,7 +309,7 @@ export function createSimulator({ log }) {
 
     let omega = 0;
     // Steering is a mechanical system: the servo and linkage have a dead band
-    // ("folga") and take time to reach the commanded angle. Both are applied to
+    // ("slack") and take time to reach the commanded angle. Both are applied to
     // the angle, and the yaw rate is then derived from the angle that the wheels
     // actually reached, not from the one that was asked for.
     const realism = config.realism || {};
@@ -397,7 +397,7 @@ export function createSimulator({ log }) {
     if (collisionType) {
       // A car that clips a wall at a shallow angle scrapes along it; blocking the
       // whole step made it stick to the wall and stay there, pushing, which is
-      // what "ficou preso na parede" looked like. Keep whichever axis is free and
+      // what "stuck on the wall" looked like. Keep whichever axis is free and
       // report only the speed into the wall: a rub at 20 cm/s along the wall is
       // not a 20 cm/s impact.
       const radNow = (nextHeading * Math.PI) / 180;

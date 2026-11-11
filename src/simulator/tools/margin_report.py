@@ -6,7 +6,7 @@ much room did the car actually have? Every wall and every traffic sign is scored
 by the clearance between it and the car's body box, so a line that looks tidy on
 the plot but grazes a sign at 1 cm shows up as 1 cm.
 
-    .venv/bin/python tools/margin_report.py prova-....json
+    .venv/bin/python tools/margin_report.py round-....json
     .venv/bin/python tools/margin_report.py exports/*.json --top 5
 
 Geometry mirrors ui/lib/config.js and ui/lib/geometry.js: the pose in the export
@@ -185,7 +185,7 @@ def analyse(path: str) -> dict:
             gap = clearance_to_segments(box(s), segs)
             if worst_sign is None or gap < worst_sign.gap_cm / 100:
                 worst_sign = Hit(
-                    f"sinal {sign['colour']} {sign['lane']} ({sign['x_cm']:.0f},{sign['y_cm']:.0f})",
+                    f"sign {sign['colour']} {sign['lane']} ({sign['x_cm']:.0f},{sign['y_cm']:.0f})",
                     gap * 100, s["t_ms"], s["x_cm"], s["y_cm"],
                 )
 
@@ -231,41 +231,41 @@ def analyse(path: str) -> dict:
 def report(r: dict, top: int = 3) -> None:
     print(f"{r['path']}")
     print(f"  seed {r['seed']} · {r['direction']} · {r['elapsed_s']:.1f} s · "
-          f"{r['score']} pts · estacionamento {r['parking'] or '—'}"
+          f"{r['score']} pts · parking {r['parking'] or '—'}"
           + (" · PAREDE MOVIDA" if r["wall_moved"] else ""))
     print()
-    print("  volta  tempo   caminho  v.média  %<15cm/s  marcha-atrás")
+    print("  lap  time  path  avg speed  %<15cm/s  reverse")
     for l in r["laps"]:
         print(f"   {l['lap']}   {l['time_s']:6.1f}s {l['path_m']:6.2f} m "
               f"{l['v_mean']:6.1f} {l['slow_pct']:8.1f}% {l['reverse_s']:10.1f}s")
 
-    print("\n  folga mínima às paredes, por secção")
+    print("\n  min clearance to walls, per section")
     for lane in ("bottom", "left", "top", "right", "corner"):
         h = r["lanes"].get(lane)
         if not h:
             continue
         flag = "  CONTACTO" if h.gap_cm <= 0.5 else ("  <5 mm" if h.gap_cm < 0.5 else "")
-        print(f"   {lane:<7} {h.gap_cm:6.1f} cm  em t={h.t_ms/1000:6.1f}s "
+        print(f"   {lane:<7} {h.gap_cm:6.1f} cm  at t={h.t_ms/1000:6.1f}s "
               f"({h.x_cm:5.1f},{h.y_cm:5.1f}){flag}")
 
     if r["worst_sign"]:
         w = r["worst_sign"]
-        print(f"\n   sinal mais próximo: {w.gap_cm:.1f} cm  ({w.what}) em t={w.t_ms/1000:.1f}s")
+        print(f"\n   nearest sign: {w.gap_cm:.1f} cm  ({w.what}) at t={w.t_ms/1000:.1f}s")
 
     if r["contacts"]:
-        print(f"\n  contactos com parede: {len(r['contacts'])}")
+        print(f"\n  wall contacts: {len(r['contacts'])}")
         for c in r["contacts"][:top]:
             print(f"   t={c.t_ms/1000:6.1f}s {c.what} ({c.x_cm:.1f},{c.y_cm:.1f})")
 
-    print(f"\n  passagens de sinais: {len(r['passages'])}"
-          f" · fora da linha: {len(r['wrong_side'])}")
+    print(f"\n  sign passages: {len(r['passages'])}"
+          f" · off the line: {len(r['wrong_side'])}")
     for p in r["wrong_side"]:
         dy = p["car_y_cm"] - p["sign_y_cm"]
         dx = p["car_x_cm"] - p["sign_x_cm"]
         print(f"   t={p['t_ms']/1000:6.1f}s {p['colour']:<5} {p['lane']:<6} "
-              f"sinal ({p['sign_x_cm']:.0f},{p['sign_y_cm']:.0f}) "
+              f"sign ({p['sign_x_cm']:.0f},{p['sign_y_cm']:.0f}) "
               f"carro ({p['car_x_cm']:.0f},{p['car_y_cm']:.0f}) "
-              f"-> {p['side']} (linha {p['intended_side']}), desvio {math.hypot(dx, dy):.1f} cm")
+              f"-> {p['side']} (line {p['intended_side']}), deviation {math.hypot(dx, dy):.1f} cm")
 
 
 def main() -> None:

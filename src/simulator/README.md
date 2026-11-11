@@ -38,8 +38,8 @@ firmware: `python -m simulator.main --controller placeholder`.
 4. `ui/lib/race.js` times the round, counts sections and laps, tracks sign and
    wall contact, and scores it with the official WRO 2026 table.
 
-Buttons: **Nova pista** (new seed), **Repetir pista** (same seed, fresh firmware),
-**Ruído** (sensor noise + real sonar cones), **1×/2×** (simulation speed). The
+Buttons: **New track** (new seed), **Repeat track** (same seed, fresh firmware),
+**Noise** (sensor noise + real sonar cones), **1×/2×** (simulation speed). The
 seed fixes the sign layout and the start direction, so two firmware versions can
 be compared on the exact same track.
 
@@ -114,7 +114,7 @@ ends the round there and then (`result.signWrongSide` records why).
 | --- | --- | --- | --- | --- | --- |
 | 4111204647 | 3 | 24 | **62** | 112–122 s | 1.8.2 (complete and parallel) |
 | 2026 | 3 | 24 | **62** | 128 s at 2× | 1.8.2 |
-| «Repetir pista» at 4× | 3 | 24 | **62/62/62** | 142.7 / 153.3 / 138.2 s | 1.8.2 |
+| «Repeat track» at 4× | 3 | 24 | **62/62/62** | 142.7 / 153.3 / 138.2 s | 1.8.2 |
 | sign sweep (53 layouts) | 3 | 24 | **40 of 53** | median 133 s, max 151 s | 1.8.2 in all that finish |
 
 Odometry vs ground truth: median **2.8 cm**, max per round **6.9 cm**. The parking

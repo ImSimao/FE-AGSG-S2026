@@ -160,31 +160,31 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       if (points) breakdown.push({ code, label, points });
     };
 
-    add("1.1", `secções na direção correcta (${state.sectionsDone})`, Math.min(24, state.sectionsDone));
-    add("1.2", `voltas completas (${state.laps})`, Math.min(cfg.laps, state.laps));
+    add("1.1", `sections in the right direction (${state.sectionsDone})`, Math.min(24, state.sectionsDone));
+    add("1.2", `full laps (${state.laps})`, Math.min(cfg.laps, state.laps));
     if (state.finishedInSection && state.laps >= cfg.laps) {
-      add("1.3", "parou na secção de chegada após 3 voltas", 3);
+      add("1.3", "stopped in the finish section after 3 laps", 3);
     }
     if (state.laps >= cfg.laps) {
       add(
         state.signsMoved ? "1.6" : "1.7",
-        state.signsMoved ? "sinais movidos (após 3 voltas)" : "sinais não movidos (após 3 voltas)",
+        state.signsMoved ? "signs moved (after 3 laps)" : "signs not moved (after 3 laps)",
         state.signsMoved ? 8 : 10
       );
     } else if (state.laps >= 1) {
       add(
         state.signsMoved ? "1.4" : "1.5",
-        state.signsMoved ? "sinais movidos (sem 3 voltas)" : "sinais não movidos (sem 3 voltas)",
+        state.signsMoved ? "signs moved (without 3 laps)" : "signs not moved (without 3 laps)",
         state.signsMoved ? 2 : 4
       );
     }
     if (state.startInParking && state.laps >= 1) {
-      add("1.8.1", "arrancou dentro do estacionamento", 7);
+      add("1.8.1", "started inside the parking lot", 7);
     }
     if (state.parking === "1.8.2") {
-      add("1.8.2", "estacionou completo e paralelo", 15);
+      add("1.8.2", "parked complete and parallel", 15);
     } else if (state.parking === "1.8.3") {
-      add("1.8.3", "estacionou parcial ou não paralelo", 7);
+      add("1.8.3", "parked partly or not parallel", 7);
     }
 
     state.breakdown = breakdown;
@@ -258,7 +258,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
     resetSignDisplacements();
     state.topSpeed = 0;
     lastPose = null;
-    if (log_it) log("Prova reiniciada - à espera de movimento.");
+    if (log_it) log("Round restarted - waiting for movement.");
     emit();
   }
 
@@ -270,7 +270,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       state.startInParking = true;
     }
     log(
-      `Prova armada (${state.startInParking ? "dentro do estacionamento" : "fora do estacionamento"}); o cronómetro arranca ao primeiro movimento.`
+      `Round armed (${state.startInParking ? "inside the parking lot" : "outside the parking lot"}); the timer starts on the first movement.`
     );
     emit();
   }
@@ -283,7 +283,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       state.direction = "cw";
     }
     if (state.direction) {
-      log(`Sentido detectado: ${state.direction === "ccw" ? "anti-horário" : "horário"}.`);
+      log(`Direction detected: ${state.direction === "ccw" ? "counter-clockwise" : "clockwise"}.`);
     }
   }
 
@@ -309,14 +309,14 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
         state.lapTimesMs.push(Math.round(state.elapsedMs));
         log(
           state.laps >= cfg.laps
-            ? `Volta ${state.laps}/${cfg.laps} - três voltas completas, segue para o estacionamento.`
-            : `Volta ${state.laps}/${cfg.laps} completa.`
+            ? `Lap ${state.laps}/${cfg.laps} - three full laps, heading to the parking lot.`
+            : `Lap ${state.laps}/${cfg.laps} complete.`
         );
       }
     } else if (nextIndex === prevIndex) {
       // no-op
     } else {
-      log(`Secção fora de ordem: ${prev} -> ${next} (não conta).`);
+      log(`Section out of order: ${prev} -> ${next} (does not count).`);
     }
   }
 
@@ -340,7 +340,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
       timer = null;
     }
     log(
-      `Fim da prova (${reason}): ${state.score} pontos, ${(state.elapsedMs / 1000).toFixed(1)} s, ${state.laps} voltas.`
+      `Round over (${reason}): ${state.score} points, ${(state.elapsedMs / 1000).toFixed(1)} s, ${state.laps} laps.`
     );
     emit();
     onFinish({ ...state, result: state.score });
@@ -361,7 +361,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
     if (state.phase === "armed" && speed > 0.01) {
       state.phase = "running";
       state.startedAt = now;
-      log("Cronómetro a contar.");
+      log("Timer running.");
     }
 
     if (state.phase === "running") {
@@ -413,8 +413,8 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
         const radius = config.signSeatCircleDiameterMeters / 2;
         if (Math.hypot(touched.dx, touched.dy) > radius) {
           state.signsMoved = true;
-          log("Sinal movido para fora do círculo - prova terminada.");
-          finalize("sinal movido para fora do círculo");
+          log("Sign moved out of the circle - round over.");
+          finalize("sign moved out of the circle");
           return;
         }
       }
@@ -432,10 +432,10 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
           state.lastSignPassageCount = passages.length;
           state.signWrongSide = true;
           log(
-            `Sinal ${passage.colour} em ${passage.lane} passado do lado errado ` +
-              `(${passage.side}, a linha é ${passage.intended_side}) - prova terminada.`
+            `Sign ${passage.colour} in ${passage.lane} passed on the wrong side ` +
+              `(${passage.side}, the line is ${passage.intended_side}) - round over.`
           );
-          finalize("sinal passado do lado errado");
+          finalize("sign passed on the wrong side");
           return;
         }
         state.lastSignPassageCount = passages.length;
@@ -453,24 +453,24 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
           // the old behaviour - rubbing them costs the hit, not the round.
           if (hit.type === "parking wall") {
             log(
-              `Toque na parede magenta a ${(hit.speed * 100).toFixed(0)} cm/s - prova terminada.`,
+              `Touch on the magenta wall at ${(hit.speed * 100).toFixed(0)} cm/s - round over.`,
             );
-            finalize("toque na parede magenta");
+            finalize("touch on the magenta wall");
             return;
           }
           if (hit.speed > cfg.wallMovedSpeedMetersPerSec) {
             state.wallMoved = true;
-            log("Parede movida: pontuação da ronda a zero (regra 9.18).");
-            finalize("parede movida");
+            log("Wall moved: round score zeroed (rule 9.18).");
+            finalize("wall moved");
             return;
           }
-          log(`Contacto com ${hit.type} a ${(hit.speed * 100).toFixed(0)} cm/s (permitido).`);
+          log(`Contact with ${hit.type} at ${(hit.speed * 100).toFixed(0)} cm/s (allowed).`);
         }
       }
 
       if (state.elapsedMs / 1000 >= cfg.maxSeconds) {
         state.timedOut = true;
-        finalize("tempo máximo");
+        finalize("time limit");
         return;
       }
 
@@ -504,13 +504,13 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
         }
         // A running hold, not an accumulator. The parallel-parking shuffle stops
         // for ~0,5 s between every step, and summing those pauses declared the
-        // car parked mid-manoeuvre (prova-...-100414: "estacionou" at 110,3 s
+        // car parked mid-manoeuvre (round-...-100414: "parked" at 110.3 s
         // with the car 90 deg off parallel and still doing 8 cm/s). Only a car
         // that stays put for parkHoldSeconds ends the round; the pose it settled
         // in is still remembered above, so a timeout scores the best attempt.
         state.bayMs = state.baySince === null ? 0 : now - state.baySince;
         if (state.bayMs >= cfg.parkHoldSeconds * 1000) {
-          finalize("estacionou");
+          finalize("parked");
           return;
         }
       }
@@ -531,7 +531,7 @@ export function createRace({ log = () => {}, onUpdate = () => {}, onFinish = () 
         } else if (state.lastStillAt === null) {
           state.lastStillAt = now;
         } else if (now - state.lastStillAt >= cfg.stopHoldSeconds * 1000) {
-          finalize("parado");
+          finalize("stopped");
           return;
         }
       } else {

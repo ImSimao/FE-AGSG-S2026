@@ -341,7 +341,7 @@ async def main_async(args):
         done = {r["case"] for r in rows}
         existing = [r for r in existing if r["case"] not in done]
     summary_path.write_text(json.dumps(existing + rows, indent=2))
-    print(f"\n{len(rows)} casos -> {summary_path}")
+    print(f"\n{len(rows)} cases -> {summary_path}")
 
 
 def main():

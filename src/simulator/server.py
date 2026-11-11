@@ -37,7 +37,7 @@ class TelemetryServer:
     except json.JSONDecodeError:
       return
     msg_type = data.get("type")
-    # Starting a round makes you the driver: whoever presses "Nova pista" takes
+    # Starting a round makes you the driver: whoever presses "New track" takes
     # over from the previous tab instead of silently driving a puppet world.
     if msg_type == "race" and data.get("action") == "reset" and sender is not None:
       if sender is not self._driver:

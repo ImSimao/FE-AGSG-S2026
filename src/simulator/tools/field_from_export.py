@@ -35,7 +35,7 @@ def snippet(export: pathlib.Path, with_url: bool = False) -> str:
         for s in signs
     )
     sim = data.get("sim") or {}
-    head = "# %s (%s %s, seed %s, %d sinais)" % (
+    head = "# %s (%s %s, seed %s, %d signs)" % (
         export.name, sim.get("direction"), sim.get("startMode"),
         sim.get("seed"), len(signs),
     )

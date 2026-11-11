@@ -26,8 +26,8 @@ export const appState = {
   simTime: 0,
   simPose: null,
   simVel: 0,
-  steerActualDeg: 0, // angulo que as rodas realmente tem (folga + atraso)
-  steerContact: 0, // lado do jogo em contacto: +1, -1 ou 0 (dentro da folga)
+  steerActualDeg: 0, // angle the wheels actually have (slack + delay)
+  steerContact: 0, // game side in contact: +1, -1 or 0 (within slack)
   simDt: 1 / 60,
   keyState: { w: false, a: false, s: false, d: false },
   camera: {

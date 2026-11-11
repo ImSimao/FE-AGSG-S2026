@@ -134,7 +134,7 @@ function recordSignPassages(prev, curr) {
     // whole 127 mm body has to clear the sign's plane, and it has to get there
     // running the lane. Before this, the crossing fired as soon as the centre
     // brushed the plane while turning into the parking bay - on
-    // prova-4111204647-...-211055 the car was 22 cm south of the green at
+    // round-4111204647-...-211055 the car was 22 cm south of the green at
     // (200,60) on a 35 degree diagonal and the round died at 66.2 s for a pass
     // it never made. The crossing is remembered here and committed below, once
     // the tail is past.
@@ -215,7 +215,7 @@ function recordSignPassages(prev, curr) {
 
     // A note, not a warning: taking the other side of a sign breaks no rule.
     log(
-      `Sinal ${sign.state === 1 ? "verde" : "vermelho"} em ${sign.lane} passado pelo lado ${sideOfSign} (a linha do firmware é pelo lado ${intendedSide}).`
+      `Sign ${sign.state === 1 ? "green" : "red"} in ${sign.lane} passed on side ${sideOfSign} (the firmware line is on side ${intendedSide}).`
     );
   });
 }

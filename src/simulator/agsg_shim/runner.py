@@ -97,7 +97,7 @@ def apply_scale(value) -> float:
   changed = abs(scale - vtime.clock.scale) > 1e-6
   vtime.set_scale(scale)
   if changed:
-    out({"t": "stderr", "m": "[shim] relogio do firmware a %.1fx" % scale})
+    out({"t": "stderr", "m": "[shim] firmware clock at %.1fx" % scale})
   return vtime.clock.scale
 
 
