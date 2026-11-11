@@ -1,4 +1,4 @@
 Team's photos
 ====
 
-This directory must contain 2 photos of the team (an official one and one funny photo with all team members)
+This directory contains the team photos: the official team photo (`TeamPhoto.jpg`) and the individual member photos (`joana.jpg`, `simao.jpg`).
