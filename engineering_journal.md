@@ -474,7 +474,7 @@ Reversing the motor while the wheels are still rolling makes them skid, and the 
 We chose a **1000 RPM N20 with a 3:5 reduction** so the wheel turns at 600 RPM — enough top speed (~100 cm/s theoretical) while keeping torque reserve, and we run well below the maximum (45–60 cm/s) for control stability.
 
 **6. Front nose and the parking-length rule**
-We originally kept the front raised above the field walls so it would pass over low obstacles. A rule clarification then stated that the parking length is measured at the height below the track wall (10 cm), so we added a **nose close to the ground** at the front. This keeps the measured length at 20 cm, which entitles the robot to a 30 cm parking bay. This is a mechanical decision, described in §2.1.
+We originally kept the front raised above the field walls so it would pass over low obstacles. Rules 13.3 (walls are 100 mm high) and 13.25 (parking limitation 200 × 20 × 100 mm) mean the parking length is measured at the height below the wall, so we added a **nose close to the ground** at the front. It is now **73 mm** long, which keeps the measured length short. This is a mechanical decision, described in §2.1.
 
 **7. Heading sensor — CMPS12 → BNO085**
 Last year we used a CMPS12 compass module, but the magnetic fields in the competition environment made the heading unreliable. We switched to the **BNO085**, which uses a fused game rotation vector without a magnetometer, giving a stable heading that is unaffected by magnetic interference.

@@ -89,7 +89,7 @@ The motor and the logic/sensor rails are separated so that motor current spikes 
 
 The vehicle measures **200 mm (length) × 61 mm (width) × 170 mm (height)** and weighs **610 g**, well inside the 1.5 kg limit (rule 11.2). We kept the footprint compact so that it manoeuvres easily around the field without hitting walls or obstacles.
 
-The body stays **above** the walls and obstacles, so the vehicle clears low obstacles, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low: the robot measures **20 cm** below that height, which entitles it to a **30 cm** parking bay.
+The body stays **above** the walls and obstacles, so the vehicle clears low obstacles, and a **nose close to the ground** extends at the front. Following the rules that the walls are **100 mm** high (13.3) and the parking limitation is **200 × 20 × 100 mm** (13.25), the parking length is measured at the height below the wall: the nose is now **73 mm** long, which keeps the measured length short.
 
 The drivetrain is a single rear **DC motor (N20, 1000 RPM) with a quadrature encoder**, driving the rear axle through a **3:5 gear reduction** and a **metal RC differential**, which lets the two rear wheels rotate at different speeds through corners. The front wheels use **Ackermann steering** driven by a single **servo**. The encoder provides odometry (distance travelled), and the BNO085 IMU provides heading, so the robot navigates with a closed-loop position estimate.
 
