@@ -93,6 +93,13 @@ The body stays **above** the walls and obstacles, so the vehicle clears low obst
 
 The drivetrain is a single rear **DC motor (N20, 1000 RPM) with a quadrature encoder**, driving the rear axle through a **3:5 gear reduction** and a **metal RC differential**, which lets the two rear wheels rotate at different speeds through corners. The front wheels use **Ackermann steering** driven by a single **servo**. The encoder provides odometry (distance travelled), and the BNO085 IMU provides heading, so the robot navigates with a closed-loop position estimate.
 
+**Robot profile** (technical drawing; full PDF in [`models/robot_profile.pdf`](models/robot_profile.pdf)):
+
+<div align="center">
+    <img src="other/img/robot_profile_page1.png" width="380" alt="Robot profile (1/2)">
+    <img src="other/img/robot_profile_page2.png" width="380" alt="Robot profile (2/2)">
+</div>
+
 ### 2.4 Vehicle photos
 
 | Front | Back | Top |
