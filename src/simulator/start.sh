@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$ROOT_DIR"
+# This script lives in src/simulator/. It runs from src/ so that
+# `python -m simulator` resolves the simulator package, while the firmware is
+# the sibling src/robot/.
+SIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$(dirname "$SIM_DIR")"
+cd "$SRC_DIR"
 
 PYTHON_BIN="${PYTHON:-python3}"
 UI_PORT="${UI_PORT:-8781}"
@@ -15,9 +19,9 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
 fi
 
 # Activate repo-local virtualenv if present.
-if [ -d "$ROOT_DIR/.venv" ]; then
+if [ -d "$SRC_DIR/.venv" ]; then
   # shellcheck disable=SC1091
-  source "$ROOT_DIR/.venv/bin/activate"
+  source "$SRC_DIR/.venv/bin/activate"
 fi
 
 # Ensure simulator dependency is available.
@@ -28,7 +32,7 @@ except Exception:
     raise SystemExit(1)
 PY
   echo "[setup] Installing simulator dependencies..."
-  "$PYTHON_BIN" -m pip install -r "$ROOT_DIR/simulator/requirements.txt"
+  "$PYTHON_BIN" -m pip install -r "$SIM_DIR/requirements.txt"
 fi
 
 cleanup() {
@@ -37,8 +41,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "[ui] Serving ./ui at http://localhost:${UI_PORT}"
-"$PYTHON_BIN" -m http.server "$UI_PORT" --directory "$ROOT_DIR/ui" &
+echo "[ui] Serving ./simulator/ui at http://localhost:${UI_PORT}"
+"$PYTHON_BIN" -m http.server "$UI_PORT" --directory "$SIM_DIR/ui" &
 UI_PID=$!
 
 echo "[simulator] Starting WebSocket server at ws://${SIM_HOST}:${SIM_PORT}"
@@ -48,4 +52,3 @@ SIM_PID=$!
 echo "[start] Press Ctrl+C to stop both processes"
 # Wait for either process to exit (Ctrl+C will terminate both).
 wait -n "$UI_PID" "$SIM_PID"
-

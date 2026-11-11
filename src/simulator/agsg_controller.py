@@ -144,7 +144,7 @@ class AgsgController:
     self.restart_requested = False
     revision = ""
     try:
-      rev_file = pathlib.Path(__file__).resolve().parent.parent / "firmware" / "agsg" / ".sync-revision"
+      rev_file = pathlib.Path(__file__).resolve().parent.parent / "robot" / ".sync-revision"
       if rev_file.is_file():
         revision = " revision %s" % rev_file.read_text().split()[0][:12]
     except Exception:  # noqa: BLE001 - the revision is documentation, not control

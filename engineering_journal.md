@@ -228,9 +228,9 @@ The CMPS12 reads ~0° drift in a clean environment, but the competition track ca
 
 | Board | Firmware | Responsibility |
 |-------|----------|----------------|
-| Raspberry Pi Pico 2 (main) | `firmware/agsg/` (MicroPython) | navigation, control, sensor fusion |
-| Raspberry Pi Pico 1 (sonar) | `firmware/agsg/SonarSlave/` | reads the 4 sonars, streams distances over UART |
-| OpenMV H7 | `firmware/agsg/Camera/` | detects red/green traffic signs, streams detections over UART |
+| Raspberry Pi Pico 2 (main) | `src/robot/` (MicroPython) | navigation, control, sensor fusion |
+| Raspberry Pi Pico 1 (sonar) | `src/robot/SonarSlave/` | reads the 4 sonars, streams distances over UART |
+| OpenMV H7 | `src/robot/Camera/` | detects red/green traffic signs, streams detections over UART |
 
 ![Communication diagram](schemes/communication_diagram.png)
 
@@ -353,7 +353,7 @@ Rather than guessing whether a firmware change helps, we built a **firmware-in-t
     <img src="other/img/simulador.png" width="650" alt="The WRO simulator running the AGSG firmware in the loop">
 </div>
 
-**Design decision — run the real firmware, not a reimplementation.** The simulator does not port the control code to Python; it runs the actual `firmware/agsg/` MicroPython under CPython through a hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A bug fixed in `firmware/agsg/` is fixed in the next simulated round with no porting step. A reimplementation would only prove a copy works — it would never prove the car works.
+**Design decision — run the real firmware, not a reimplementation.** The simulator does not port the control code to Python; it runs the actual `src/robot/` MicroPython under CPython through a hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A bug fixed in `src/robot/` is fixed in the next simulated round with no porting step. A reimplementation would only prove a copy works — it would never prove the car works.
 
 **Fidelity is measured, not assumed.** The "Erro odometria" tile compares the firmware's own `state.odom` against the world's true pose every frame; the median error is **2.8 cm** and the maximum per round **6.9 cm**. That number is the proof that the units, signs and coordinate frames are correct — exactly where such integrations usually fail silently.
 
@@ -361,7 +361,7 @@ Rather than guessing whether a firmware change helps, we built a **firmware-in-t
 
 **What it found.** The simulator has already caught real defects, documented with evidence in `FIRMWARE_NOTES.md`:
 - a sign-convention contradiction between the odometry and the camera zones (the heading and the traffic table used opposite rotation conventions, so no IMU sign made both work);
-- `os.environ` and `math.hypot`, which exist in CPython but not in MicroPython, and killed two rounds on the board (now caught before flashing by `tools/mpy_audit.py`);
+- `os.environ` and `math.hypot`, which exist in CPython but not in MicroPython, and killed two rounds on the board (now caught before flashing by `src/simulator/tools/mpy_audit.py`);
 - a steering-sign bug in the shim that looked exactly like "the firmware turns into the wall".
 
 **Current measured results** (see `SIMULATOR.md`): the firmware scores **62/62** on several seeds and on **40 of 53** sign layouts, with the parking manoeuvre the most fragile part (it lands in 1.8.2 / 1.8.3 / zero depending on the draw).
@@ -455,7 +455,7 @@ The repository is structured so another team can rebuild the vehicle:
 - `models/` — CAD and 3D-printable files.
 - `schemes/` — wiring diagrams (communication and power).
 - `other/img/` — the obstacle-challenge state machine flowchart.
-- `firmware/agsg/` — all control software (main, sonar slave, camera firmware).
+- `src/robot/` — all control software (main, sonar slave, camera firmware).
 - `t-photos/`, `v-photos/`, `video/` — team/vehicle photos and driving video.
 
 The commit history shows the development over time, and the README plus code comments document how to flash each board.
@@ -469,7 +469,7 @@ The commit history shows the development over time, and the README plus code com
 1. **Bluetooth (debug only)** — the HC-06 is used only for debugging and is physically removed during competition rounds; the telemetry path is disabled for rounds (rule 11.10).
 2. **Start button** — add a start button (rules 9.10–9.11) and document the single power switch.
 3. **Weight** — done: measured **610 g** (limit 1.5 kg, rule 11.2); recorded in §2.1.
-4. **English** — translate the remaining Portuguese comments/prints in `firmware/agsg/` (chapter 7).
+4. **English** — translate the remaining Portuguese comments/prints in `src/robot/` (chapter 7).
 
 ### Artefacts (team)
 

@@ -116,7 +116,7 @@ The main controller (Pico 2) runs a real-time **background control loop on the s
 5. sends **telemetry** over Bluetooth,
 6. applies **sonar-based odometry corrections**.
 
-### 3.2 Main controller modules (`firmware/agsg/`)
+### 3.2 Main controller modules (`src/robot/`)
 
 | Module | Responsibility | Related hardware |
 |--------|----------------|------------------|
@@ -138,11 +138,11 @@ The main controller (Pico 2) runs a real-time **background control loop on the s
 | `telemetry.py` | Telemetry frame (CSV + XOR checksum) over UART → Bluetooth | HC-06 |
 | `uart.py` | Shared UART helper | — |
 
-### 3.3 Sonar slave (`firmware/agsg/SonarSlave/`)
+### 3.3 Sonar slave (`src/robot/SonarSlave/`)
 
 The sonar slave (Pico 1) reads the four SRF04 ultrasonic sensors and transmits the four distances over UART0 using a framed protocol (header byte `0xA5`, four little-endian `uint16` values scaled by 10, and an XOR checksum). This framing lets the receiver re-synchronise if a byte is ever lost.
 
-### 3.4 Camera (`firmware/agsg/Camera/`)
+### 3.4 Camera (`src/robot/Camera/`)
 
 The OpenMV H7 runs a colour-blob detector that finds the red and green traffic signs in the image and streams `CAM:<cx>,<bottom_y>,<COLOR>` lines over UART. The main controller maps each detection to the corresponding traffic-sign position on the field.
 
@@ -184,18 +184,18 @@ The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the hel
 
 ## 4. Simulator (firmware-in-the-loop)
 
-To validate the navigation code without burning track time, we built a **firmware-in-the-loop simulator**. A browser UI owns the world (arena, walls, traffic signs, parking bay and Ackermann physics), while a Python process runs the **exact MicroPython firmware** from `firmware/agsg/` under CPython through a small hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A change to `firmware/agsg/` changes the next simulated round with no porting step: the same `obstacle_challenge()` state machine that drives the virtual car drives the real one.
+To validate the navigation code without burning track time, we built a **firmware-in-the-loop simulator**. A browser UI owns the world (arena, walls, traffic signs, parking bay and Ackermann physics), while a Python process runs the **exact MicroPython firmware** from `src/robot/` under CPython through a small hardware shim that emulates the sonar frames, camera lines, encoder pulses and IMU heading. A change to `src/robot/` changes the next simulated round with no porting step: the same `obstacle_challenge()` state machine that drives the virtual car drives the real one.
 
 The simulator is used to:
 
 - **Score every change** — each round is timed and scored with the official WRO FE 2026 table (max 62). The seed fixes both the sign layout and the start direction, so two firmware versions are compared on the exact same track.
 - **Measure fidelity as a number** — the firmware's own odometry is compared with the world's true pose every frame; the measured error is **2–8 cm over an 8 m run**, which is how we know the units, signs and frames are correct.
-- **Sweep sign layouts** — `tools/sign_sweep.py` runs one round per sign pattern (53 layouts) to find cases the firmware cannot handle (40/53 currently score 62).
-- **Report safety margins** — `tools/margin_report.py` rebuilds the car body at every trajectory step and reports the clearance to each wall and sign.
-- **Audit MicroPython portability** — `tools/mpy_audit.py` flags CPython-only stdlib calls (`os.environ`, `math.hypot`) that import fine in the simulator but crash on the board.
+- **Sweep sign layouts** — `src/simulator/tools/sign_sweep.py` runs one round per sign pattern (53 layouts) to find cases the firmware cannot handle (40/53 currently score 62).
+- **Report safety margins** — `src/simulator/tools/margin_report.py` rebuilds the car body at every trajectory step and reports the clearance to each wall and sign.
+- **Audit MicroPython portability** — `src/simulator/tools/mpy_audit.py` flags CPython-only stdlib calls (`os.environ`, `math.hypot`) that import fine in the simulator but crash on the board.
 - **Run headless** — `python -m simulator.race_run --runs N` runs N rounds unattended and leaves the score breakdown and a screenshot, so a firmware change is judged by its score, not by hand.
 
-Bench calibration (`simulator/calibrate.py` + `firmware/bench/bench_turn_radius.py`) closes the loop between sim and car: by driving fixed servo angles on the floor and measuring the turn radius, we fit the real steering gain and offset and feed them back into the simulator.
+Bench calibration (`src/simulator/calibrate.py` + `src/robot/bench/bench_turn_radius.py`) closes the loop between sim and car: by driving fixed servo angles on the floor and measuring the turn radius, we fit the real steering gain and offset and feed them back into the simulator.
 
 Full details and current measured results: [`SIMULATOR.md`](SIMULATOR.md) and [`FIRMWARE_NOTES.md`](FIRMWARE_NOTES.md).
 
@@ -204,9 +204,9 @@ Full details and current measured results: [`SIMULATOR.md`](SIMULATOR.md) and [`
 All firmware is flashed with **MicroPython**:
 
 1. Flash MicroPython onto the Pico 2 (main) and Pico 1 (sonar slave).
-2. Upload the files in `firmware/agsg/` to the **Pico 2** (using the MicroPico VS Code extension, Thonny, or `mpremote`). `main.py` is the entry point.
-3. Upload the contents of `firmware/agsg/SonarSlave/` to the **Pico 1** (`main.py` runs the sonar loop).
-4. Flash the OpenMV firmware in `firmware/agsg/Camera/main.py` onto the **OpenMV H7**.
+2. Upload the files in `src/robot/` to the **Pico 2** (using the MicroPico VS Code extension, Thonny, or `mpremote`). `main.py` is the entry point.
+3. Upload the contents of `src/robot/SonarSlave/` to the **Pico 1** (`main.py` runs the sonar loop).
+4. Flash the OpenMV firmware in `src/robot/Camera/main.py` onto the **OpenMV H7**.
 5. Power on: the main controller runs `main.py` automatically and starts the obstacle challenge.
 
 The only external dependency is the `bno08x.py` driver, which is included in the repository.
@@ -217,26 +217,26 @@ The only external dependency is the `bno08x.py` driver, which is included in the
 ├── models/          # CAD / 3D-printable and CNC files
 ├── other/           # extra files (hardware specs, upload notes, datasets)
 ├── schemes/         # wiring diagrams (electromechanical)
-├── firmware/        # vehicle firmware
-│   ├── agsg/        # main controller software (MicroPython)
+├── src/             # all control software
+│   ├── robot/       # vehicle firmware (MicroPython)
 │   │   ├── SonarSlave/   # sonar controller firmware
-│   │   └── Camera/       # OpenMV camera firmware
-│   ├── bench/       # bench calibration scripts
-│   ├── patches/     # documented firmware patches
-│   └── sync_firmware.sh  # refresh the vendored firmware
-├── simulator/       # Python simulator (firmware-in-the-loop)
-├── ui/              # browser UI (physics + scoring)
-├── tools/           # sign sweep / margin report / MicroPython audit
-├── micropython/     # HC-05 Bluetooth setup scripts
+│   │   ├── Camera/       # OpenMV camera firmware
+│   │   ├── bench/        # bench calibration scripts
+│   │   ├── patches/      # documented firmware patches
+│   │   ├── hc05/         # HC-05 Bluetooth setup
+│   │   └── sync_firmware.sh  # refresh the vendored firmware
+│   └── simulator/   # Python simulator (firmware-in-the-loop)
+│       ├── ui/      # browser UI (physics + scoring)
+│       ├── tools/   # sign sweep / margin report / MicroPython audit
+│       ├── start.sh # start the simulator
+│       └── start_ui.py  # start the UI
 ├── t-photos/        # team photos
 ├── v-photos/        # vehicle photos (all sides, top, bottom)
 ├── video/           # link to the driving-demonstration video
-├── start.sh         # start the simulator
-├── start_ui.py      # start the UI
 ├── SIMULATOR.md     # simulator documentation
 └── FIRMWARE_NOTES.md  # firmware findings
 ```
 
 ## 7. Reproducibility
 
-To reproduce this vehicle, another team needs the hardware listed in §2.1, the wiring diagram in `schemes/`, the CAD files in `models/`, and the source code in `firmware/agsg/`. The README and code comments document the module responsibilities and the build/upload process, so the robot can be rebuilt and the software re-flashed from this repository alone.
+To reproduce this vehicle, another team needs the hardware listed in §2.1, the wiring diagram in `schemes/`, the CAD files in `models/`, and the source code in `src/robot/`. The README and code comments document the module responsibilities and the build/upload process, so the robot can be rebuilt and the software re-flashed from this repository alone.

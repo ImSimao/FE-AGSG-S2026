@@ -1,12 +1,12 @@
 # AGSG firmware inside the simulator — findings
 
 Everything below was observed by running the **unmodified** firmware from
-`ImSimao/FE-AGSG-S2026` (vendored in `firmware/agsg/`) against this world.
-Nothing in `firmware/` was edited: a run against edited firmware proves nothing.
+`ImSimao/FE-AGSG-S2026` (vendored in `src/robot/`) against this world.
+Nothing in `src/robot/` was edited: a run against edited firmware proves nothing.
 
 ## What works
 
-* `src/` imports and boots as on the board (`init.py` opens both UARTs, starts the
+* `src/robot/` imports and boots as on the board (`init.py` opens both UARTs, starts the
   background thread on core 1, centres the servo).
 * Sonar packets, camera frames, IMU heading and encoder pulses reach the firmware
   through its own parsers (`distance.py` resync + checksum, `camera.py`
@@ -17,7 +17,7 @@ Nothing in `firmware/` was edited: a run against edited firmware proves nothing.
 * **Odometry fidelity: 2–8 cm** between the firmware's own `state.odom` and the
   world's true pose over a 8 m run (shown live as the "Erro odometria" tile).
   That is the number that says the units, signs and frames are right.
-* A full WRO FE 2026 round is timed and scored (see `ui/lib/race.js`).
+* A full WRO FE 2026 round is timed and scored (see `src/simulator/ui/lib/race.js`).
 
 ## Issue 1 — the clockwise start drives into the wall (blocker for half the draws)
 
@@ -182,7 +182,7 @@ will satisfy both.
 
 ## Integrated upstream 74893b4 (2026-11-03)
 
-`firmware/sync_firmware.sh` pulled `74893b4 Update odometry handling and adjust
+`src/robot/sync_firmware.sh` pulled `74893b4 Update odometry handling and adjust
 speed limits`. Their own changes, and what they change for the simulator:
 
 - `ADJUST_ODOM_INTERVAL_MS` 200 -> 25: the sonar corrections now run at 40 Hz
@@ -214,7 +214,7 @@ at 40 Hz. That is ~80 long lines per second on top of a telemetry stream designe
 for 20 Hz. On the bench with the HC-06 that will saturate the link and starve the
 pose/heartbeat lines. Worth putting behind a debug flag before the next round.
 
-Added 2026-11-10: `Telemetry.ENABLED` in `firmware/agsg/telemetry.py` is that
+Added 2026-11-10: `Telemetry.ENABLED` in `src/robot/telemetry.py` is that
 flag — one switch for the CSV frame and every log line, read at import and
 checked on each write, so it also works as a runtime toggle. It starts **OFF on
 the car and ON in the simulator**, decided by `sys.implementation.name`
@@ -227,7 +227,7 @@ while `act`/`odom` stayed identical (141 vs 144).
 
 ## Issue 6 — the board's stdlib is a subset, and the simulator cannot see it (2026-11-10)
 
-The simulator runs `firmware/agsg/` on CPython; the car runs MicroPython, whose
+The simulator runs `src/robot/` on CPython; the car runs MicroPython, whose
 stdlib is documented as "a subset of the corresponding CPython module". A name
 CPython has and MicroPython does not imports fine, runs fine in the sim, and
 raises only on the board. Two rounds in a row died that way:
@@ -243,15 +243,15 @@ message means the simulator raised it and this class is not the cause.
 
 Both fixed in place — `math.sqrt(dx*dx + dy*dy)`, and an env probe that falls
 back to `False` instead of touching `os.environ` unguarded. The useful part is
-`tools/mpy_audit.py`: it checks every stdlib name the firmware uses against the
+`src/simulator/tools/mpy_audit.py`: it checks every stdlib name the firmware uses against the
 MicroPython docs and exits non-zero, so the class costs a second instead of a
 round.
 
 ```bash
-.venv/bin/python tools/mpy_audit.py              # firmware/, 30 files
-.venv/bin/python tools/mpy_audit.py --self-test  # proves the rules fire
+.venv/bin/python src/simulator/tools/mpy_audit.py              # src/robot/, 30 files
+.venv/bin/python src/simulator/tools/mpy_audit.py --self-test  # proves the rules fire
 ```
 
-`firmware/agsg/Camera/` is the OpenMV script and runs on a different MicroPython
+`src/robot/Camera/` is the OpenMV script and runs on a different MicroPython
 build, so the checker skips it. A deliberate CPython-only probe (one that is
 caught and falls back) is marked `# mpy-ok` on its own line.

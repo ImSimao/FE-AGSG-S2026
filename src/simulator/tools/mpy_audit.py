@@ -339,7 +339,7 @@ def main(argv: list[str]) -> int:
     if args.self_test:
         return self_test()
 
-    roots = args.paths or [pathlib.Path("firmware")]
+    roots = args.paths or [pathlib.Path("robot")]
     findings: list[Finding] = []
     for root in roots:
         if not root.exists():

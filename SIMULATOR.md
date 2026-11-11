@@ -3,7 +3,7 @@
 The browser UI owns the world (arena, walls, signs, parking bay, physics). The
 Python process is the brain. By default the brain is the **real firmware** of the
 AGSG car (`ImSimao/FE-AGSG-S2026`, MicroPython, base revision `74893b4`),
-vendored in `firmware/agsg/` and run under CPython through a hardware shim.
+vendored in `src/robot/` and run under CPython through a hardware shim.
 
 A commit on the firmware repository changes the next simulated round with no
 porting step: the same `obstacle_challenge()` state machine drives the virtual car
@@ -11,7 +11,7 @@ that will drive the real one.
 
 **Repository:** https://git.severino.xyz/Assistant/wro-sim-agsg (privado). Cada
 alteração ao simulador *e* ao firmware vai aqui, com a razão no corpo do commit;
-`git log -p firmware/` mostra só o que é nosso, e a secção
+`git log -p src/robot/` mostra só o que é nosso, e a secção
 [Firmware: o que é nosso](#firmware-o-que-é-nosso-e-o-que-é-da-equipa) diz o que
 cada patch resolve. Um hook `post-commit` faz `git push` best-effort para
 `origin` (desligar com `WRO_NO_PUSH=1`).
@@ -19,7 +19,7 @@ cada patch resolve. Um hook `post-commit` faz `git push` best-effort para
 ```
 
 ```
-browser (physics + scoring)  <--ws-->  simulator/  <--json lines-->  firmware/agsg/
+browser (physics + scoring)  <--ws-->  src/simulator/  <--json lines-->  src/robot/
    pose, sonar, signs, encoder            controller                 MicroPython code
    timer, laps, score                     shim: machine, bno08x      unmodified
 ```
@@ -49,7 +49,7 @@ stand-in loop that just drives forward.
 3. The controller converts units, feeds the runner process, and turns the
    firmware's `state.target_speed` + `Servo.current_angle` back into a world
    command (`speed`, `steeringRadius = L / tan(delta)`).
-4. `ui/lib/race.js` times the round, counts sections and laps, tracks sign and
+4. `src/simulator/ui/lib/race.js` times the round, counts sections and laps, tracks sign and
    wall contact, and scores it with the official WRO 2026 table.
 
 Buttons: **Nova pista** (new seed), **Repetir pista** (same seed, fresh firmware),
@@ -71,12 +71,12 @@ firmware assumes it mirrors with the direction, which is issue 4 in
 | encoder | metres travelled this tick (projected on heading) | pulses injected into `encoder._count` (33.2 counts/cm, from PPR 200, ratio 3/5, Ø 32 mm) |
 | position | metres, origin bottom-left | absolute cm, mirrored in x when `clockwise == 1` (`303 - odom_x`) |
 
-The sign table in `ui/lib/traffic.js` matches `camera.py:get_traffic_lane_inside_pov()`
+The sign table in `src/simulator/ui/lib/traffic.js` matches `camera.py:get_traffic_lane_inside_pov()`
 exactly (bottom 100/150/200 @ y=60 plus the 240,100 corner of the next lane; left
 and right at x=40/60 and 240/260; top at y=240/260), so the mapping between the
 world and the firmware's zones is derived, not guessed.
 
-## Knobs (all on `simulator/main.py`)
+## Knobs (all on `src/simulator/main.py`)
 
 | flag | default | meaning |
 | --- | --- | --- |
@@ -153,7 +153,7 @@ Medido a 1×, 2× e 4× (o multiplicador tem de ser transparente; se não for, �
 | «Repetir pista» a 4× | 3 | 24 | **62/62/62** | 142.7 / 153.3 / 138.2 s |
 | varredura de sinais (53 layouts) | 3 | 24 | **40 de 53** | mediana 133 s, máx 151 s | 1.8.2 em todas as que fecham |
 
-A varredura (`tools/sign_sweep.py` + `tools/sweep_report.py`) corre uma ronda por
+A varredura (`src/simulator/tools/sign_sweep.py` + `src/simulator/tools/sweep_report.py`) corre uma ronda por
 cada layout de sinais em sentido horário — uma faixa de cada vez, 12 padrões por
 faixa (mesma cor nas duas linhas, cores opostas, linhas diferentes, slots
 adjacentes, sinal único) mais cinco casos com as quatro faixas iguais.
@@ -189,9 +189,9 @@ adjacentes, sinal único) mais cinco casos com as quatro faixas iguais.
 
 ## Firmware: o que é nosso e o que é da equipa
 
-`firmware/agsg/` é o repositório da equipa (`ImSimao/FE-AGSG-S2026`, base
+`src/robot/` é o repositório da equipa (`ImSimao/FE-AGSG-S2026`, base
 `74893b4`) com **quatro patches documentados**; tudo o resto é deles. `git log -p
-firmware/` mostra exactamente o que mudámos.
+src/robot/` mostra exactamente o que mudámos.
 
 | patch | ficheiro | o que resolve | commit |
 |---|---|---|---|
@@ -211,7 +211,7 @@ anel de transmissão enche. Com a `update_odom()` a escrever 2 linhas longas a
 thread — à espera do link. Por isso `Telemetry.ENABLED` nasce **desligado na
 placa** e **ligado no simulador**, decidido por `sys.implementation.name`
 (`"micropython"` vs `"cpython"`). Para o trazer de volta na bancada:
-`Telemetry.ENABLED = True` em `firmware/agsg/telemetry.py`, ou `WRO_TELEMETRY=1`
+`Telemetry.ENABLED = True` em `src/robot/telemetry.py`, ou `WRO_TELEMETRY=1`
 (`=0` força o silêncio) a arrancar o simulador — a variável é lida no arranque de
 cada processo de firmware, e há um por ronda. Em qualquer dos casos perdem-se as
 linhas do firmware no log e no export; física, sensores e `odom` não mudam.
@@ -225,15 +225,15 @@ exactamente o que vê no robô (`1b719d1`).
 ## Repository layout
 
 ```
-firmware/agsg/            firmware da equipa + os nossos 4 patches documentados
-simulator/agsg_shim/      machine.py, bno08x.py, hardware.py, runner.py
-simulator/agsg_controller.py  websocket <-> firmware bridge and unit conversion
-simulator/agsg_process.py subprocess plumbing (JSON lines)
-simulator/main.py          entry point, --controller switch, knobs
-simulator/race_run.py      headless round runner
-simulator/calibrate.py     sign/pose/gain sweep
-ui/lib/race.js             sections, laps, contact rules, WRO scoring
-ui/lib/simulator.js        world physics (Ackermann, braking, collisions)
+src/robot/            firmware da equipa + os nossos 4 patches documentados
+src/simulator/agsg_shim/      machine.py, bno08x.py, hardware.py, runner.py
+src/simulator/agsg_controller.py  websocket <-> firmware bridge and unit conversion
+src/simulator/agsg_process.py subprocess plumbing (JSON lines)
+src/simulator/main.py          entry point, --controller switch, knobs
+src/simulator/race_run.py      headless round runner
+src/simulator/calibrate.py     sign/pose/gain sweep
+src/simulator/ui/lib/race.js             sections, laps, contact rules, WRO scoring
+src/simulator/ui/lib/simulator.js        world physics (Ackermann, braking, collisions)
 FIRMWARE_NOTES.md         what the firmware does wrong, with evidence
 ```
 
@@ -264,7 +264,7 @@ tarde:
 
 `CSV` descarrega só a trajetória, para folha de cálculo (XY scatter).
 
-## Relatório de margem (`tools/margin_report.py`)
+## Relatório de margem (`src/simulator/tools/margin_report.py`)
 
 O JSON exportado diz o que aconteceu; este relatório diz **quanto espaço
 sobrava**. Constrói a caixa do corpo (12,7 × 6,1 cm, a 3,8 cm do eixo traseiro)
@@ -272,8 +272,8 @@ em cada passo da trajetória e mede a folga até às 8 paredes rígidas, às par
 da baía e a cada sinal do campo:
 
 ```bash
-.venv/bin/python tools/margin_report.py prova-2026-....json
-.venv/bin/python tools/margin_report.py /tmp/*.json --top 5   # compara rondas
+.venv/bin/python src/simulator/tools/margin_report.py prova-2026-....json
+.venv/bin/python src/simulator/tools/margin_report.py /tmp/*.json --top 5   # compara rondas
 ```
 
 Imprime, por volta, o tempo, o **caminho percorrido** (comprimento real, não
@@ -287,7 +287,7 @@ Duas leituras que valem mais do que o total: `caminho` maior que o perímetro
 `marcha-atrás` de segundos na primeira volta é a rotina de correção a pagar-se
 em tempo de prova.
 
-## Portabilidade MicroPython (`tools/mpy_audit.py`)
+## Portabilidade MicroPython (`src/simulator/tools/mpy_audit.py`)
 
 O simulador corre o firmware em **CPython**; a placa corre **MicroPython**, cuja
 biblioteca padrão é um **subconjunto**. Uma chamada que só existe no CPython
@@ -296,12 +296,12 @@ importa e corre na simulação e só rebenta no carro, a meio de uma ronda:
 rondas (história em `FIRMWARE_NOTES.md`, Issue 6).
 
 ```bash
-.venv/bin/python tools/mpy_audit.py              # firmware/ (30 ficheiros)
-.venv/bin/python tools/mpy_audit.py --self-test  # confirma que as regras disparam
+.venv/bin/python src/simulator/tools/mpy_audit.py              # src/robot/ (30 ficheiros)
+.venv/bin/python src/simulator/tools/mpy_audit.py --self-test  # confirma que as regras disparam
 ```
 
 Lê o firmware e lista cada nome da biblioteca padrão que não exista no
 MicroPython, com a substituição a usar (`math.hypot` → `math.sqrt(x*x + y*y)`),
-e sai com código 1 — dá para o pôr à frente do flash. O `firmware/agsg/Camera/`
+e sai com código 1 — dá para o pôr à frente do flash. O `src/robot/Camera/`
 (OpenMV) fica de fora porque corre noutro interpretador; uma utilização
 deliberada de uma API só de CPython marca-se na linha com `# mpy-ok`.

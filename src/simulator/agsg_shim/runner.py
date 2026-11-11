@@ -36,7 +36,7 @@ import time
 
 SHIM_DIR = pathlib.Path(__file__).resolve().parent
 ROOT = SHIM_DIR.parent.parent
-FIRMWARE_DIR = ROOT / "firmware" / "agsg"
+FIRMWARE_DIR = ROOT / "robot"
 
 ACT_HZ = 50.0
 ODOM_HZ = 10.0
