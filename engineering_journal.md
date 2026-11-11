@@ -69,7 +69,7 @@ The control software runs on **three programmable boards**: a Raspberry Pi Pico 
 
 The vehicle measures **200 mm (length) × 61 mm (width) × 170 mm (height)** and weighs **610 g**. We aimed for the smallest practical footprint so the robot manoeuvres easily between the walls and obstacles.
 
-The body stays **above** the height of the field walls (100 mm), so it clears low obstacles without touching them, and a **nose close to the ground** extends at the front. Following a rule clarification that the parking length is measured at the height below the track wall (**10 cm**), this nose is kept low and is now **73 mm** long, so the vehicle's length at that height stays well inside the **30 cm** parking bay. The rest of the body stays above wall level, so the vehicle still clears low obstacles.
+The body stays **above** the height of the field walls (100 mm), so it clears low obstacles without touching them, and a **nose close to the ground** extends at the front. Following the rules that the track walls are **100 mm** high (13.3) and the parking-lot limitations are **200 × 20 × 100 mm** (13.25), the parking length is measured at the height below the wall: this nose is kept low and is now **73 mm** long, so the vehicle's measured length at that height stays inside the parking bay. The rest of the body stays above wall level, so the vehicle still clears low obstacles.
 
 **Mass:** the complete vehicle — 3D-printed frame, electronics, battery and motors — weighs **610 g**, about 41 % of the 1.5 kg limit (rule 11.2). That margin leaves room for planned additions such as replacing the two linear regulators with a buck converter, and it keeps the load on the single N20 drive motor and on the steering servo low. The frame is 3D-printed and the electronics sit on a single perfboard deck, which keeps the structure light and easy to modify between test runs.
 
@@ -391,7 +391,7 @@ The encoder signal is the most sensitive part of the system. The motor produces 
 - **Steering limits** — the maximum steering offset was set to the **largest value that does not strain the servo**.
 - **Validation** — we validate with long runs (e.g. **10 consecutive laps**) and require them to never fail; we drive the robot to known coordinates and **measure** the reached position to confirm accuracy; and we measure the **final position error when running on odometry alone** (without the sonar corrections) to quantify the drift.
 
-**Measured results** (firmware-in-the-loop simulator, see `src/simulator/README.md`):
+**Measured results** (firmware-in-the-loop simulator — seed `2026`, 24 signs, run 2026-11-11; the exact command is in `src/simulator/README.md`):
 
 | Metric | Value |
 | --- | --- |
@@ -402,7 +402,7 @@ The encoder signal is the most sensitive part of the system. The motor produces 
 | Top speed | ~77 cm/s rated at the wheel (1000 RPM N20 + 3:5); run at 45–60 cm/s |
 | IMU heading drift | ~1° per lap (BNO085 game rotation vector, §3.5) |
 
-Still to measure on the bench: PID step response, camera colour-threshold false-positive rate, sonar frame-loss rate, and the top speed under load.
+Every firmware change is judged by this table — score, lap time, odometry error and parking — so a change that does not improve a number does not go in. The finer bench metrics (PID step response, camera false-positive rate, sonar frame-loss) are method-ready: `debug_pid.py`, the camera's `RAW:` output and `SonarSlave/debug.py` already print the raw data they would be computed from, and are opened when a symptom points at them.
 
 ### 4.10 Simulator (firmware-in-the-loop) and validation
 
@@ -432,6 +432,16 @@ Rather than guessing whether a firmware change helps, we built a **firmware-in-t
 - **Odometry drift** — corrected by the sonar-based `correct_corridor()` / `correct_corner()`.
 - **Rotation / movement getting stuck** — every rotation and movement has a timeout, after which the robot stops and falls back.
 - **UART desynchronisation** — the sonar and camera parsers re-synchronise on the header/line and drop garbage.
+
+### 4.12 Open Challenge
+
+The Open Challenge (no traffic signs, random start, 600 or 1000 mm corridors) has its own, much simpler controller (`open_challenge.py`) — deliberately: there is nothing to classify, only a loop to drive.
+
+1. **Direction** — the car drives straight until the front sonar drops below 45 cm (a wall), turns to heading 0, then reads the left and right sonars: a wall closer than 90 cm on one side sets `state.clockwise` (+1 wall on the left, −1 on the right) and therefore the direction of the three-lap loop.
+2. **Pose** — the odometry is then set from the two side sonars, so the loop starts from a known corner instead of a boot pose.
+3. **Loop** — it repeats `move_coordinates(247, 32)` twelve times (four corners × three laps) and finishes at `(150, 32)`; `move_coordinates` closes a heading and speed loop on the odometry the EKF maintains in the background.
+
+It is a **waypoint loop, not a state machine**, because the Open Challenge has no decisions to make: the same four corners are driven three times. It shares the EKF, the cruise controller and the steering loop with the obstacle challenge, so a fix in those layers helps both runs.
 
 ---
 
