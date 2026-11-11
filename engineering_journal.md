@@ -265,6 +265,7 @@ The CMPS12 reads ~0° drift in a clean environment, but the competition track ca
 | `move_coordinates.py` | navigation primitives (move to a point, rotate) using odometry + PID |
 | `background.py` | real-time control loop (sensors, odometry, cruise control, telemetry) |
 | `state.py` | shared robot state (odometry, lane, direction) |
+| `ekf.py` | Extended Kalman filter for pose (encoder predict + sonar update) |
 | `field.py` | field model (lanes, zones, traffic signals) |
 | `camera.py` | parses OpenMV traffic-sign detections |
 | `distance.py` | parses sonar distances (framed protocol) |
@@ -325,11 +326,12 @@ To mark a position **EMPTY**, the camera must keep that position inside its fiel
 
 ### 4.6 Navigation and control
 
-**Odometry** — the robot's position is estimated by fusing two sources:
-- **distance** from the wheel encoder: `distance = counts / (PPR / gear_ratio) × wheel_circumference`,
-- **heading** from the BNO085 IMU (game rotation vector, 100 Hz fusion).
+**Odometry** — the robot's position is estimated by an **Extended Kalman filter** (`ekf.py`, a 2D pose filter in centimetres). The heading stays on the BNO085 (game rotation vector, 100 Hz fusion) and is an input to the motion model:
 
-The encoder delta and the heading are integrated in the background loop at 100 Hz to update `odom_x` / `odom_y`.
+- **Predict** — the encoder delta (`distance = counts / (PPR / gear_ratio) × wheel_circumference`) is integrated at 100 Hz, with process noise that grows with the distance travelled (encoder scale error along-track, a 2° heading error cross-track).
+- **Update** — the sonar fixes at known locations are fused as Kalman updates in the lane-relative frame, one axis at a time, each gated by a Mahalanobis distance (3σ). A rejected fix leaves that axis untouched.
+
+The filter keeps a covariance (`P`), so the correction strength adapts to the current uncertainty instead of snapping the position the way the old raw integration did.
 
 **Line following** — `move_coordinates` drives the robot toward a target point. It projects the current position onto the target line and uses a **PID controller on the cross-track error** to steer, while a trapezoidal speed profile (constant speed, then deceleration near the target) controls the speed. `rotate_coordinates` / `rotate_angle` rotate the robot in place toward a point or a heading.
 
@@ -339,7 +341,7 @@ The encoder delta and the heading are integrated in the background loop at 100 H
 
 **Sonar** — the sonar controller (Pico 1) streams the four distances over UART0 using a framed protocol (header `0xA5`, four little-endian `uint16` scaled ×10, XOR checksum), so a dropped byte cannot permanently desynchronise the receiver.
 
-**Odometry correction** — because the encoder+IMU estimate drifts, the background loop corrects the position with the sonars in two specific situations: `corrigir_corredor` (driving straight along a corridor) and `corrigir_canto` (rounding a corner). This keeps the position estimate anchored to the real walls.
+**Odometry correction** — the EKF's update step runs in the background loop at 40 Hz, but only where a wall reading is meaningful: `correct_corridor()` (driving straight along a corridor) and `correct_corner()` (rounding a corner). This keeps the position estimate anchored to the real walls, while the Mahalanobis gate rejects readings that disagree with the current estimate.
 
 ### 4.7 Traffic-sign detection and passing
 

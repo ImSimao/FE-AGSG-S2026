@@ -126,6 +126,7 @@ The main controller (Pico 2) runs a real-time **background control loop on the s
 | `move_coordinates.py` | Navigation primitives: `move_coordinates`, `rotate_angle`, `rotate_coordinates` (odometry + PID steering) | motor, servo, encoder, IMU |
 | `background.py` | Background control loop (sensors, odometry, cruise control, telemetry) | sonar, camera, encoder, IMU, motor |
 | `state.py` | Shared robot state (odometry, lane, direction) | — |
+| `ekf.py` | Extended Kalman filter (EKF) for pose estimation: encoder predict + sonar update | encoder, IMU, sonar |
 | `field.py` | Field model (4 lanes, 3 zones, traffic-signal tracking) | — |
 | `camera.py` | Parses OpenMV traffic-sign detections (UART1) | OpenMV |
 | `distance.py` | Parses sonar distance over a framed protocol (header 0xA5 + XOR checksum) | sonar slave |
@@ -177,7 +178,7 @@ A sign position is never trusted the moment the camera first sees it: the robot 
 
 - **No skidding.** The cruise controller applies acceleration/deceleration limits and holds the brake for `REVERSE_HOLD_MS` (500 ms) before reversing direction, because a skidding wheel makes the encoder count wheel spin that does not translate into travel, which corrupts the odometry.
 - **Servo limits.** Steering is clamped to ±`_MAX_STEERING_OFFSET` (29°), and the cruise controller reduces its acceleration while the wheels are steered (the `accel_scale` term), so the servo is never forced and the tyres do not scrub in corners.
-- **Odometry correction.** The background loop runs `_adjust_odometry()` at 40 Hz, correcting the position estimate with the sonars only at known locations — `correct_corridor()` while travelling a straight corridor and `correct_corner()` in the corners.
+- **Odometry — Extended Kalman filter.** The pose is estimated by an EKF (`ekf.py`): the encoder integration is the *predict* step, and the sonar readings at known locations (`correct_corridor()` in a straight corridor, `correct_corner()` in the corners) are the *update* step. Each sonar fix is gated per axis with a Mahalanobis distance (3σ), so an outlier never pulls the estimate.
 - **Timeouts.** Every rotation and movement has a timeout — `ROTATE_TIMEOUT_MS` (8 s), `MOVE_TIMEOUT_MS` (60 s), a 3 s wait for the exit sign, and 5 s / 10 s parking loops — so a missed detection or a sensor glitch can never stall the robot forever.
 
 The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the help of this guide: <https://youtu.be/4Y7zG48uHRo>.
