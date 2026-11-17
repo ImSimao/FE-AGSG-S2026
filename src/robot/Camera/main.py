@@ -25,13 +25,6 @@ RED_THRESHOLDS = [
     (37, 48, 56, 69, -128, 127) #Dark
 ]
 
-THRESHOLDS = RED_THRESHOLDS + GREEN_THRESHOLDS   # red first -> bit0
-
-# blob.code() is one bit per threshold, in THRESHOLDS order. Build the masks
-# from the list lengths so adding or removing a threshold cannot silently
-# mislabel a colour (with two red thresholds, bit 1 is red Dark, not green).
-RED_MASK = (1 << len(RED_THRESHOLDS)) - 1
-GREEN_MASK = ((1 << len(GREEN_THRESHOLDS)) - 1) << len(RED_THRESHOLDS)
 # --- mounting (measure once, then constants) --------------------------------
 W, H = 320, 240                  # QVGA
 CAM_HEIGHT_CM = 10.18            # lens above the floor (bench-calibrated)
@@ -185,28 +178,28 @@ while True:
                 pass
             timeouts = 0
         continue
-    blobs = img.find_blobs(THRESHOLDS, roi=(0, 0, W, H), merge=False,
-                           pixels_threshold=100, area_threshold=100)
     parts = []
     drawn = 0
     solved = 0
     nearest_d = None
     nearest_color = None
     nearest_h = 0.0
-    for blob in blobs:
+
+    # Run find_blobs once per colour list: a blob's colour is the list it came
+    # from, which is what the reference firmware did and is far less fragile
+    # than decoding a multi-threshold code bitmask.
+    candidates = []
+    for blob in img.find_blobs(RED_THRESHOLDS, roi=(0, 0, W, H), merge=False,
+                               pixels_threshold=100, area_threshold=100):
+        candidates.append((blob, "RED"))
+    for blob in img.find_blobs(GREEN_THRESHOLDS, roi=(0, 0, W, H), merge=False,
+                               pixels_threshold=100, area_threshold=100):
+        candidates.append((blob, "GREEN"))
+
+    for blob, color in candidates:
         if solved >= MAX_BLOBS_PER_FRAME:
             break
         code = _blob_field(blob, "code")
-        red = bool(code & RED_MASK)
-        green = bool(code & GREEN_MASK)
-        if red and green:
-            continue                        # matched red AND green: ignore
-        if green:
-            color = "GREEN"
-        elif red:
-            color = "RED"
-        else:
-            continue
         bx, by, bw, bh = _blob_field(blob, "rect")
         # Horizontal clip also corrupts the u-centre, but the distance and
         # height now come from the VERTICAL extent, so a horizontal clip only
