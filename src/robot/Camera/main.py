@@ -19,11 +19,8 @@ from machine import LED
 # uses the vertical extent to pin the height and the full 3D box for distance.
 # ---------------------------------------------------------------------------
 DEBUG = False
-GREEN_THRESHOLDS = [(21, 86, -54, -9, -128, 51)]
-RED_THRESHOLDS = [
-    (34, 71, 23, 74, -30, 49), #Light
-    (37, 48, 56, 69, -128, 127) #Dark
-]
+GREEN_THRESHOLDS = [(48, 86, -54, -19, -22, 37)]
+RED_THRESHOLDS = [(34, 71, 23, 74, -30, 49)]
 
 # --- mounting (measure once, then constants) --------------------------------
 W, H = 320, 240                  # QVGA
