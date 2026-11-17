@@ -141,6 +141,13 @@ def solve_dh(v0_obs, v1_obs, D0):
     if abs(r[0]) > MAX_RES_PX or abs(r[1]) > MAX_RES_PX:
         return None
     return th[0], th[1]
+def _blob_field(blob, name):
+    """Read a blob field whether this OpenMV build exposes it as an
+    attribute or as a method (blob.code vs blob.code())."""
+    value = getattr(blob, name)
+    return value() if callable(value) else value
+
+
 frame_no = 0
 timeouts = 0
 
@@ -177,7 +184,7 @@ while True:
     for blob in blobs:
         if solved >= MAX_BLOBS_PER_FRAME:
             break
-        code = blob.code()
+        code = _blob_field(blob, "code")
         if (code & 1) and (code & 2):
             continue                        # matched red AND green: ignore
         if code & 1:
@@ -186,13 +193,13 @@ while True:
             color = "GREEN"
         else:
             continue
-        bx, by, bw, bh = blob.rect()
+        bx, by, bw, bh = _blob_field(blob, "rect")
         # Horizontal clip also corrupts the u-centre, but the distance and
         # height now come from the VERTICAL extent, so a horizontal clip only
         # offsets x slightly; a vertical clip is fatal (no v-span). Reject only
         # a vertical clip, and only when it prevents a fit.
         v_clipped = (by <= 0 or by + bh >= H)
-        dens = blob.density()
+        dens = _blob_field(blob, "density")
         if dens < MIN_DENSITY:
             continue
         if bh < bw * MIN_ASPECT:
@@ -215,12 +222,12 @@ while True:
             nearest_d = D
             nearest_color = color
         if DEBUG and drawn < 4:
-            img.draw_rectangle(blob.rect(), color=(255, 255, 255))
-            img.draw_cross(blob.cx(), blob.cy(), color=(255, 255, 255))
-            ty = blob.y() - 12
+            img.draw_rectangle(_blob_field(blob, "rect"), color=(255, 255, 255))
+            img.draw_cross(_blob_field(blob, "cx"), _blob_field(blob, "cy"), color=(255, 255, 255))
+            ty = _blob_field(blob, "y") - 12
             if ty < 0:
                 ty = 0
-            img.draw_string(blob.x(), ty, "x%.1f y%.1f h%.1f" % (x, D, hcm),
+            img.draw_string(_blob_field(blob, "x"), ty, "x%.1f y%.1f h%.1f" % (x, D, hcm),
                             color=(255, 0, 0))
             drawn += 1
         if DEBUG and (frame_no % 10) == 0:
