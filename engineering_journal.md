@@ -250,7 +250,7 @@ The two L7805CV linear regulators waste ~55% of the input power as heat (11 V �
 
 - **Encoder**, the quadrature signal is debounced in software (a **dynamic debounce** whose window scales with speed) because the motor produces electrical noise (see §4).
 - **IMU**, uses the game rotation vector, so no compass calibration is required; the yaw reference is set at the start of a run.
-- **Sonar**, the four sensors are fired **concurrently** (one 10 µs trigger to all four, then four echoes measured in parallel) for throughput; `SonarSlave/debug.py` prints the concurrent and sequential distances side by side, so any cross-talk between sensors is visible (see §4).
+- **Sonar**, the four sensors are fired **sequentially**, one at a time with a short guard gap after each echo, so no sensor can hear another's burst; `SonarSlave/debug.py` still measures the concurrent mode side by side, so the cost of going sequential stays measurable on the bench (see §4).
 - **Camera**, bench-calibrated against two points: a 15 cm sign at 37 cm reads (y=37.4, h=15.0) and a 10 cm sign at 60 cm reads (y=57.5, h=10.4). The focal (315 px vertical, 339 px lateral), the 10.18 cm height and the 8.3° pitch were solved from those points; a 32 cm point was rejected as geometrically incompatible with the other two.
 
 ### 3.5 Gyro evaluation
@@ -465,8 +465,8 @@ This section records the constraints, trade-offs and iterations that shaped the 
 **1. Threads (`_thread`) vs `uasyncio`**
 We first migrated the control loop to `uasyncio` for cleaner code, but the cooperative scheduler introduced timing jitter that degraded the driving. We **reverted to `_thread`** (two real cores), accepting the extra care needed for shared state in exchange for deterministic timing.
 
-**2. Sonar firing, concurrent, with a cross-talk check**
-We fire all four sonars **concurrently**, one 10 µs trigger to all four, then measure the four echoes in parallel, because it keeps the update rate high. Concurrent firing risks **cross-talk** (one sensor's echo picked up by another), so `SonarSlave/debug.py` prints the concurrent and sequential distances side by side and flags where they disagree.
+**2. Sonar firing, sequential, after concurrent firing risked cross-talk**
+We first fired all four sonars **concurrently**, one 10 µs trigger to all four with the four echoes measured in parallel, because it keeps the update rate high. Concurrent firing risks **cross-talk**, one sensor reading another's echo, and a cross-talk spike looks exactly like a wall a few centimetres away, which is the worst possible failure for the odometry corrections. The four sensors are now fired **one at a time**, with a short guard gap so the previous burst has died away. The cost is the sweep time: a sweep is the sum of the four echoes instead of the longest one, about 50 ms at corridor distances (~20 Hz) and 129 ms worst case when every echo times out, against a main loop that reads the frame at 50 Hz and keeps the last values in between. `SonarSlave/debug.py` measures both modes side by side, so the trade can be re-checked on the bench instead of argued about.
 
 **3. Encoder debounce, fixed vs dynamic**
 A fixed debounce could not handle both fast and slow speeds: at low speed the real edges are sparse and the noise dominates. We implemented a **dynamic debounce** whose window scales with the current speed, and we also raised the **PWM to 20 kHz** to move the noise source above the encoder band. These two changes together fixed the encoder over-counting.
@@ -502,6 +502,7 @@ The development is recorded in the git history (169 commits at the time of writi
 | `uasyncio` control loop | cleaner code | `7a2725a` |
 | revert to `_thread` | `uasyncio` scheduling jitter degraded driving | `153aaeb` |
 | concurrent sonar firing + debug tool | throughput; cross-talk check | `13910c0` |
+| sequential sonar firing + guard gap | cross-talk risk on the odometry fixes | *uncommitted* |
 | 20 kHz motor PWM | encoder over-counting from motor noise | `40c1fe2` |
 | dynamic encoder debounce | noise dominates at low speed | `9d59c39` |
 | cruise-control reversal guard | motor reversing during deceleration | `f966934` |
@@ -513,7 +514,7 @@ Each change is a measured fix: the trigger (jitter, cross-talk, over-counting, r
 | Failure mode | Effect | Mitigation |
 |--------------|--------|------------|
 | Encoder noise (motor) | wrong odometry | 20 kHz PWM, dynamic debounce, separated power rails |
-| Sonar cross-talk | wrong distances | concurrent firing + `SonarSlave/debug.py` comparison |
+| Sonar cross-talk | wrong distances | sequential firing: one burst in the air at a time |
 | Motor reversing on deceleration | wrong direction | cruise-control guard |
 | Traffic-sign misdetection | wrong passing side | colour thresholds + region filtering on OpenMV |
 | UART desync (sonar) | corrupted distances | framed protocol with header + checksum |

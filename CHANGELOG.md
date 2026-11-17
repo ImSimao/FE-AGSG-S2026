@@ -5,6 +5,21 @@ All notable changes to the AGSG self-driving car are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Sonar slave measures sequentially** (`src/robot/SonarSlave/main.py`): the four
+  SRF04 sensors are triggered one at a time, with a 3 ms guard gap after each echo
+  and a wait for a stale pulse to fall before firing, instead of all four at once.
+  Concurrent firing risks cross-talk, and a cross-talk spike reads as a wall a few
+  centimetres away. A sweep now costs the sum of the four echoes (~50 ms at
+  corridor distances, ~20 Hz; 129 ms worst case when every echo times out). The
+  UART frame format is unchanged.
+- **`SonarSlave/debug.py`** treats the sequential sweep as the production mode and
+  keeps the concurrent pass as the comparison, so cross-talk stays measurable on
+  the bench.
+
 ## [1.0.0] - 2026-11-11
 
 The first release documented for the WRO Future Engineers 2026 season. The

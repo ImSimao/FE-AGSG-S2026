@@ -40,7 +40,7 @@ test_parking = _env_flag("WRO_TEST_PARKING")
 
 
 
-ninety_degrees_distance_offset = 16 # 16.5
+ninety_degrees_distance_offset = 14 # 16.5
 
 traffic_lane_center = (state.outer_wall - state.inner_wall) / 4
 traffic_lane_y_offset = 28 #26.25

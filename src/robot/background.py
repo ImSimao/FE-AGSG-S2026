@@ -29,7 +29,7 @@ REVERSE_HOLD_MS = 500
 class CruiseControl:
     """Incremental proportional controller with acceleration/deceleration limits."""
 
-    def __init__(self, kp=1/150, max_accel=0.25, max_decel=0.5, min_drive_pwm=0.10):
+    def __init__(self, kp=1/150, max_accel=0.35, max_decel=1.125, min_drive_pwm=0.1):
         self.kp = kp
         self.max_accel = max_accel   # max PWM increase per second
         self.max_decel = max_decel   # max PWM decrease per second

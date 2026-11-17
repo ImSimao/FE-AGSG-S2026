@@ -18,11 +18,11 @@ CAMERA_WIDTH = 160
 CAMERA_FOCAL_PX = 114.0
 MAX_SIGN_ANGLE_DEG = 20.0
 # Past this a 5 cm sign is a few pixels and the colour is a guess.
-MAX_SIGN_DISTANCE_CM = 80.0
+MAX_SIGN_DISTANCE_CM = 150.0
 
 # A detected sign is matched to a field position when the two agree
 # within this radius (in field cm).
-MATCH_RADIUS_CM = 5.0
+MATCH_RADIUS_CM = 10.0
 
 
 def blob_bearing_deg(traffic_x):

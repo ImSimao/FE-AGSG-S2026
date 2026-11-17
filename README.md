@@ -148,7 +148,7 @@ The main controller (Pico 2) runs a real-time **background control loop on the s
 
 ### 3.3 Sonar slave (`src/robot/SonarSlave/`)
 
-The sonar slave (Pico 1) reads the four SRF04 ultrasonic sensors and transmits the four distances over UART0 using a framed protocol (header byte `0xA5`, four little-endian `uint16` values scaled by 10, and an XOR checksum). This framing lets the receiver re-synchronise if a byte is ever lost.
+The sonar slave (Pico 1) reads the four SRF04 ultrasonic sensors and transmits the four distances over UART0 using a framed protocol (header byte `0xA5`, four little-endian `uint16` values scaled by 10, and an XOR checksum). This framing lets the receiver re-synchronise if a byte is ever lost. The four sensors are fired **one at a time**, with a short guard gap after each echo, so no sensor can hear another's burst; a full sweep costs the sum of the four echoes - about 50 ms at corridor distances - so frames arrive at ~20 Hz and the receiver keeps the last values in between.
 
 ### 3.4 Camera (`src/robot/Camera/`)
 
