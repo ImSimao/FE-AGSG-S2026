@@ -285,6 +285,6 @@ while True:
             print(line, end="")     # echo to USB (throttled)
         img.draw_string(
             (4, 6),
-            "FPS:%d blobs:%d" % (clock.fps(), len(blobs)),
+            "FPS:%d blobs:%d" % (clock.fps(), len(candidates)),
             color=(255, 255, 255)
         )
