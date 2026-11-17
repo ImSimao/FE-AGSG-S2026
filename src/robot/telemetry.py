@@ -134,7 +134,3 @@ class Telemetry:
                 return "none"
             return "%.2f" % value
 
-        Telemetry.log(
-            "ekf trace=%.2f innov_x=%s innov_y=%s"
-            % (trace, _fmt(innov_x), _fmt(innov_y))
-        )
