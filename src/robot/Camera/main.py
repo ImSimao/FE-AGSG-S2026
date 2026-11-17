@@ -18,8 +18,8 @@ import sensor, image, time, pyb, math
 # uses the vertical extent to pin the height and the full 3D box for distance.
 # ---------------------------------------------------------------------------
 DEBUG = True
-GREEN_THRESHOLDS = [(0, 100, -128, -9, -37, 127)]
-RED_THRESHOLDS = [(22, 46, 11, 63, 5, 56)]
+GREEN_THRESHOLDS = [(17, 38, -30, -6, -9, 17)]
+RED_THRESHOLDS = [(0, 100, 17, 127, -21, 127)]
 THRESHOLDS = RED_THRESHOLDS + GREEN_THRESHOLDS   # red first -> bit0
 # --- mounting (measure once, then constants) --------------------------------
 W, H = 320, 240                  # QVGA
@@ -55,18 +55,25 @@ MAX_BLOBS_PER_FRAME = 6         # cap the work per frame so capture never starve
 # residual because the model assumes a face-on column. 3 px rejected real signs;
 # 12 px accepts a yawed sign while still rejecting garbage fits.
 MAX_RES_PX = 12.0
+# Fixed exposure in microseconds. Auto exposure is disabled: it left the image
+# brighter on some power-ups, and every brightness change moves the colour
+# thresholds. Tune this once for the field lighting (10 000-20 000 us at QVGA).
+EXPOSURE_US = 15000
 # --- sensor init -----------------------------------------------------------
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
 sensor.set_vflip(True)
 sensor.set_hmirror(True)
-# settle auto exposure/white balance first, THEN lock, so hand-calibrated
-# thresholds stay valid frame to frame
+# Let auto exposure/gain/white balance settle once, then LOCK all three.
+# set_auto_gain(False) alone leaves the exposure free, so the image still
+# brightened or darkened on some boots; the exposure has to be locked too.
 sensor.skip_frames(time=1500)
 sensor.set_auto_gain(False)
+sensor.set_auto_exposure(False, exposure_us=EXPOSURE_US)
 sensor.set_auto_whitebal(False)
 sensor.skip_frames(time=500)
+print("Camera locked: exposure=%d us, gain=%d dB" % (EXPOSURE_US, int(sensor.get_gain_db())))
 clock = time.clock()
 uart = pyb.UART(3, 115200, timeout_char=1000)   # TX on P4; never block forever
 def _vspan(D, Hs):
