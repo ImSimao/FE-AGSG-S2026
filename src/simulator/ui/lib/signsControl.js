@@ -1,4 +1,5 @@
 import { trafficSigns } from "./traffic.js";
+import { config } from "./config.js";
 import { getSignHalfSize } from "./geometry.js";
 import { collidesWithAnything } from "./geometry.js";
 import { appState } from "./appState.js";
@@ -125,11 +126,20 @@ export function randomizeSigns() {
 
   // Surprise Rule: flag one active sign as "modified" - its height is 5 or 15 cm
   // (instead of 10) and it must be passed on the side of the INVERTED colour.
-  // The rule is never applied in the parking section (the bottom lane), so only
-  // signs from the other corridors can become the modified one.
+  // The rule skips the first sign the car meets ("the selected sign must not be
+  // the first traffic sign encountered"): that is the far end of the starting
+  // lane in the direction of travel, so it is excluded here.
   if (appState.surpriseRule) {
+    const startLane = trafficSigns.filter((s) => s.lane === "bottom");
+    let firstSign = null;
+    if (startLane.length) {
+      const west = config.startDirection !== "ccw"; // default/auto = clockwise = west
+      firstSign = west
+        ? startLane.reduce((a, b) => (a.x <= b.x ? a : b))
+        : startLane.reduce((a, b) => (a.x >= b.x ? a : b));
+    }
     const active = trafficSigns.filter(
-      (s) => (s.state === 1 || s.state === 2) && s.lane !== "bottom"
+      (s) => (s.state === 1 || s.state === 2) && s !== firstSign
     );
     if (active.length) {
       const picked = active[Math.floor(rand() * active.length)];

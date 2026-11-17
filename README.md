@@ -192,7 +192,7 @@ The steering PID gains (`kp=0.35`, `ki=0.003`, `kd=0.5`) were tuned with the hel
 
 ### 3.10 Surprise Rule (modified traffic sign)
 
-The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a random height of **50 mm or 150 mm** (instead of 100 mm). It is never applied in the parking section (the starting lane): a sign there keeps its original colour. The vehicle must pass on the side of the **original** colour, so the visible colour is misleading.
+The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a random height of **50 mm or 150 mm** (instead of 100 mm). It never applies to the first traffic sign the vehicle meets in the driving direction. The vehicle must pass on the side of the **original** colour, so the visible colour is misleading.
 
 The camera measures the sign height, and the controller **inverts the colour** when the height is 5 or 15 cm; a 10 cm sign is normal. The inversion is decided per passage, and each correct passage of the modified sign scores **5 points**, up to **15**, so the obstacle maximum becomes **77** (62 + 15).
 
