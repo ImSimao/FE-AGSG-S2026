@@ -1,4 +1,5 @@
 import sensor, image, time, pyb, math
+from machine import LED
 # ---------------------------------------------------------------------------
 # WRO 2026 Future Engineers - traffic sign localiser (OpenMV H7, OV7725)
 #
@@ -142,6 +143,12 @@ def solve_dh(v0_obs, v1_obs, D0):
     return th[0], th[1]
 frame_no = 0
 timeouts = 0
+
+# Nearest-sign indicator: the on-board red/green LEDs mirror the colour of
+# the closest detected sign (both off when nothing is seen).
+led_red = LED("LED_RED")
+led_green = LED("LED_GREEN")
+
 while True:
     clock.tick()
     frame_no += 1
@@ -165,6 +172,8 @@ while True:
     parts = []
     drawn = 0
     solved = 0
+    nearest_d = None
+    nearest_color = None
     for blob in blobs:
         if solved >= MAX_BLOBS_PER_FRAME:
             break
@@ -202,6 +211,9 @@ while True:
             hcm = 0.0                       # height unknown (top/bottom cut)
         elif hcm < MIN_SIGN_HEIGHT_CM or hcm > MAX_SIGN_HEIGHT_CM:
             continue
+        if nearest_d is None or D < nearest_d:
+            nearest_d = D
+            nearest_color = color
         if DEBUG and drawn < 4:
             img.draw_rectangle(blob.rect(), color=(255, 255, 255))
             img.draw_cross(blob.cx(), blob.cy(), color=(255, 255, 255))
@@ -219,6 +231,15 @@ while True:
             print("RAW:%d,%d,%d,%d,%d,%.2f" %
                   (by, by + bh, bw, bh, code, dens))
         parts.append("%.1f,%.1f,%.1f,%s" % (x, D, hcm, color))
+    if nearest_color == "RED":
+        led_red.on()
+        led_green.off()
+    elif nearest_color == "GREEN":
+        led_green.on()
+        led_red.off()
+    else:
+        led_red.off()
+        led_green.off()
     line = ("CAM:" + ";".join(parts) + "\n") if parts else "CAM:\n"
     try:
         uart.write(line)
