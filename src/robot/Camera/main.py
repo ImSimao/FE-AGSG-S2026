@@ -236,7 +236,9 @@ while True:
             nearest_d = D
             nearest_color = color
             nearest_h = hcm
-        if DEBUG and drawn < 4:
+        if DEBUG:
+            # Draw every surviving blob, light and dark alike, and print its
+            # code so it is obvious which threshold (or both) matched.
             img.draw_rectangle(_blob_field(blob, "rect"), color=(255, 255, 255))
             img.draw_cross(
                 (_blob_field(blob, "cx"), _blob_field(blob, "cy")),
@@ -247,7 +249,7 @@ while True:
                 ty = 0
             img.draw_string(
                 (_blob_field(blob, "x"), ty),
-                "x%.1f y%.1f h%.1f" % (x, D, hcm),
+                "c%d x%.1f y%.1f h%.1f" % (code, x, D, hcm),
                 color=(255, 0, 0)
             )
             drawn += 1
