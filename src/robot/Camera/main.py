@@ -223,12 +223,18 @@ while True:
             nearest_color = color
         if DEBUG and drawn < 4:
             img.draw_rectangle(_blob_field(blob, "rect"), color=(255, 255, 255))
-            img.draw_cross(_blob_field(blob, "cx"), _blob_field(blob, "cy"), color=(255, 255, 255))
+            img.draw_cross(
+                (_blob_field(blob, "cx"), _blob_field(blob, "cy")),
+                color=(255, 255, 255)
+            )
             ty = _blob_field(blob, "y") - 12
             if ty < 0:
                 ty = 0
-            img.draw_string(_blob_field(blob, "x"), ty, "x%.1f y%.1f h%.1f" % (x, D, hcm),
-                            color=(255, 0, 0))
+            img.draw_string(
+                (_blob_field(blob, "x"), ty),
+                "x%.1f y%.1f h%.1f" % (x, D, hcm),
+                color=(255, 0, 0)
+            )
             drawn += 1
         if DEBUG and (frame_no % 10) == 0:
             # RAW pixel bbox for calibration (throttled: printing every frame
@@ -255,5 +261,8 @@ while True:
     if DEBUG:
         if (frame_no % 10) == 0:
             print(line, end="")     # echo to USB (throttled)
-        img.draw_string(4, 6, "FPS:%d blobs:%d" % (clock.fps(), len(blobs)),
-                        color=(255, 255, 255))
+        img.draw_string(
+            (4, 6),
+            "FPS:%d blobs:%d" % (clock.fps(), len(blobs)),
+            color=(255, 255, 255)
+        )
