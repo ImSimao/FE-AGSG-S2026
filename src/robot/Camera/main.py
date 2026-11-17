@@ -18,8 +18,8 @@ import sensor, image, time, pyb, math
 # uses the vertical extent to pin the height and the full 3D box for distance.
 # ---------------------------------------------------------------------------
 DEBUG = True
-GREEN_THRESHOLDS = [(17, 38, -30, -6, -9, 17)]
-RED_THRESHOLDS = [(0, 100, 17, 127, -21, 127)]
+GREEN_THRESHOLDS = [(48, 86, -54, -19, -22, 37)]
+RED_THRESHOLDS = [(34, 71, 23, 74, -30, 49)]
 THRESHOLDS = RED_THRESHOLDS + GREEN_THRESHOLDS   # red first -> bit0
 # --- mounting (measure once, then constants) --------------------------------
 W, H = 320, 240                  # QVGA
@@ -209,7 +209,7 @@ while True:
             if ty < 0:
                 ty = 0
             img.draw_string(blob.x(), ty, "x%.1f y%.1f h%.1f" % (x, D, hcm),
-                            color=(255, 255, 255))
+                            color=(255, 0, 0))
             drawn += 1
         if DEBUG and (frame_no % 10) == 0:
             # RAW pixel bbox for calibration (throttled: printing every frame
