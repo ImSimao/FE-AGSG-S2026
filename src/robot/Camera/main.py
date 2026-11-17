@@ -155,6 +155,7 @@ timeouts = 0
 # the closest detected sign (both off when nothing is seen).
 led_red = LED("LED_RED")
 led_green = LED("LED_GREEN")
+led_blue = LED("LED_BLUE")
 
 while True:
     clock.tick()
@@ -181,6 +182,7 @@ while True:
     solved = 0
     nearest_d = None
     nearest_color = None
+    nearest_h = 0.0
     for blob in blobs:
         if solved >= MAX_BLOBS_PER_FRAME:
             break
@@ -221,6 +223,7 @@ while True:
         if nearest_d is None or D < nearest_d:
             nearest_d = D
             nearest_color = color
+            nearest_h = hcm
         if DEBUG and drawn < 4:
             img.draw_rectangle(_blob_field(blob, "rect"), color=(255, 255, 255))
             img.draw_cross(
@@ -244,15 +247,27 @@ while True:
             print("RAW:%d,%d,%d,%d,%d,%.2f" %
                   (by, by + bh, bw, bh, code, dens))
         parts.append("%.1f,%.1f,%.1f,%s" % (x, D, hcm, color))
-    if nearest_color == "RED":
+    is_modified = nearest_h != 0.0 and (nearest_h < 7.5 or nearest_h > 12.5)
+    if nearest_color is None:
+        led_red.off()
+        led_green.off()
+        led_blue.off()
+    elif nearest_color == "RED":
         led_red.on()
-        led_green.off()
-    elif nearest_color == "GREEN":
-        led_green.on()
-        led_red.off()
-    else:
-        led_red.off()
-        led_green.off()
+        if is_modified:
+            led_green.on()      # red + green = yellow: 5/15 cm red sign
+        else:
+            led_green.off()
+        led_blue.off()
+    else:                       # GREEN
+        if is_modified:
+            led_blue.on()       # blue: 5/15 cm green sign
+            led_red.off()
+            led_green.off()
+        else:
+            led_green.on()
+            led_red.off()
+            led_blue.off()
     line = ("CAM:" + ";".join(parts) + "\n") if parts else "CAM:\n"
     try:
         uart.write(line)
