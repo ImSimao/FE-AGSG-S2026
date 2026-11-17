@@ -18,8 +18,8 @@ from machine import LED
 # the apparent-width method read a measured 150 mm sign as ~141 mm. The solver
 # uses the vertical extent to pin the height and the full 3D box for distance.
 # ---------------------------------------------------------------------------
-DEBUG = True
-GREEN_THRESHOLDS = [(48, 86, -54, -19, -22, 37)]
+DEBUG = False
+GREEN_THRESHOLDS = [(21, 86, -54, -9, -128, 51)]
 RED_THRESHOLDS = [(34, 71, 23, 74, -30, 49)]
 THRESHOLDS = RED_THRESHOLDS + GREEN_THRESHOLDS   # red first -> bit0
 # --- mounting (measure once, then constants) --------------------------------
@@ -59,7 +59,7 @@ MAX_RES_PX = 12.0
 # Fixed exposure in microseconds. Auto exposure is disabled: it left the image
 # brighter on some power-ups, and every brightness change moves the colour
 # thresholds. Tune this once for the field lighting (10 000-20 000 us at QVGA).
-EXPOSURE_US = 15000
+EXPOSURE_US = 25000
 # --- sensor init -----------------------------------------------------------
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
