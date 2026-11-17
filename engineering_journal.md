@@ -445,7 +445,7 @@ It is a **waypoint loop, not a state machine**, because the Open Challenge has n
 
 ### 4.13 Surprise Rule
 
-The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a height of **50 or 150 mm** (instead of 100 mm); the vehicle must pass on the side of the **original** colour, so the visible colour is the opposite of what to follow. The camera already measures the sign height, so `camera.py` **inverts the colour** when the height is 5 or 15 cm (`apply_surprise_rule`) and matches the modified sign like any other before the inversion. Each correct passage of the modified sign scores **5 points**, up to **15**, so the obstacle maximum becomes **77** (62 + 15).
+The optional **Surprise Rule** replaces one traffic sign with the **opposite colour** and a height of **50 or 150 mm** (instead of 100 mm); the rule is never applied in the parking section (the starting lane), so a sign there keeps its original colour; the vehicle must pass on the side of the **original** colour, so the visible colour is the opposite of what to follow. The camera already measures the sign height, so `camera.py` **inverts the colour** when the height is 5 or 15 cm (`apply_surprise_rule`) and matches the modified sign like any other before the inversion. Each correct passage of the modified sign scores **5 points**, up to **15**, so the obstacle maximum becomes **77** (62 + 15).
 
 ---
 

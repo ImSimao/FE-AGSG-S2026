@@ -125,9 +125,12 @@ export function randomizeSigns() {
 
   // Surprise Rule: flag one active sign as "modified" - its height is 5 or 15 cm
   // (instead of 10) and it must be passed on the side of the INVERTED colour.
-  // The sign keeps its colour here; the firmware inverts it from the height.
+  // The rule is never applied in the parking section (the bottom lane), so only
+  // signs from the other corridors can become the modified one.
   if (appState.surpriseRule) {
-    const active = trafficSigns.filter((s) => s.state === 1 || s.state === 2);
+    const active = trafficSigns.filter(
+      (s) => (s.state === 1 || s.state === 2) && s.lane !== "bottom"
+    );
     if (active.length) {
       const picked = active[Math.floor(rand() * active.length)];
       picked.modified = true;

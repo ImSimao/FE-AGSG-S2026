@@ -33,8 +33,12 @@ def apply_surprise_rule(color, height_cm):
     """Surprise Rule: a modified sign is 5 or 15 cm tall (instead of 10 cm) and
     carries the OPPOSITE colour of the original. The vehicle must pass on the
     side of the original colour, so a 5/15 cm sign's colour is inverted here.
+    The rule is never applied in the parking section (the starting lane): a sign
+    there keeps its original colour whatever its height.
     h == 0 means the height was unknown (a clipped sign), so no inversion.
     """
+    if state.is_lane_with_parking:
+        return color
     if 3.5 <= height_cm < 7.5 or 12.5 < height_cm <= 18.0:
         return "GREEN" if color == "RED" else "RED"
     return color

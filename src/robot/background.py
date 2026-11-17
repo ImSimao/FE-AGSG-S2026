@@ -150,17 +150,6 @@ def update_odom(x_relative, y_relative, observe_x=True, observe_y=True):
         x_relative, y_relative, observe_x, observe_y
     )
     curr_x, curr_y = state.get_relative_odom
-    Telemetry.log(
-        "ekf odom %.1f,%.1f -> %.1f,%.1f z=(%.1f,%.1f) obs=(%d,%d) innov=(%s,%s) accept=(%d,%d) trace=%.2f"
-        % (
-            prev_x, prev_y, curr_x, curr_y,
-            x_relative, y_relative,
-            1 if observe_x else 0, 1 if observe_y else 0,
-            _fmt_innov(innov_x), _fmt_innov(innov_y),
-            1 if accepted_x else 0, 1 if accepted_y else 0,
-            pose_ekf.trace(),
-        )
-    )
 
 def correct_corner():
     curr_x, curr_y = state.get_relative_odom
