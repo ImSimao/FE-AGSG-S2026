@@ -22,7 +22,7 @@ MAX_SIGN_DISTANCE_CM = 150.0
 
 # A detected sign is matched to a field position when the two agree
 # within this radius (in field cm).
-MATCH_RADIUS_CM = 10.0
+MATCH_RADIUS_CM = 13.0
 
 
 def blob_bearing_deg(traffic_x):

@@ -152,8 +152,14 @@ def _recenter_x(target_x, rtp, speed=8):
     state.target_speed = 0
 
 
-def _bay_swing(degrees, lock, forward=True, speed=12, lead=0.0):
+def _bay_swing(degrees, lock, reverse=False, speed=15, lead=0.0):
     """Swing the body by `degrees` with the wheels held at full lock.
+
+    `reverse` drives the arc backwards. It replaces the old `forward` flag: every
+    live call in the parking manoeuvre passes reverse=True (the car parks
+    backwards) and the two keywords drifted apart - `reverse=True` raised
+    TypeError the moment the car reached the bay, and the `finally` in main.py
+    stopped the motors, so parking never even started.
 
     The bay is 1,5 x the chassis (190,5 mm) and the car is 127 mm long: a driven
     arc reaches the magenta element after ~5 cm, so the car cannot turn out of
@@ -165,6 +171,7 @@ def _bay_swing(degrees, lock, forward=True, speed=12, lead=0.0):
     ``lead`` stops the swing that many degrees early to compensate the compass
     lag (~30 ms): without it a 3 deg swing coasted to 4-9 deg.
     """
+    forward = not reverse
     start = state.compass_angle_relative
     Telemetry.log("bay: swing %.0f deg, lock %+d, %s, from h=%.0f"
                   % (degrees, lock, "forward" if forward else "reverse", start))
@@ -247,8 +254,8 @@ def obstacle_challenge():
             state.set_relative_odom(100+1.75, distance_left)
 
             #for _ in range(4):
-            #    _bay_swing(7, state.clockwise, forward=True)
-            #    _bay_swing(3, -state.clockwise, forward=False)
+            #    _bay_swing(7, state.clockwise, reverse=False)
+            #    _bay_swing(3, -state.clockwise, reverse=True)
 
             rotate_coordinates(150, 60)
 
@@ -264,8 +271,8 @@ def obstacle_challenge():
             state.set_relative_odom(200-distance_front, distance_right)
 
             #for _ in range(3):
-            #    _bay_swing(7, state.clockwise, forward=True)
-            #    _bay_swing(3, -state.clockwise, forward=False)
+            #    _bay_swing(7, state.clockwise, reverse=False)
+            #    _bay_swing(3, -state.clockwise, reverse=True)
 
             rotate_angle(-60)
 
@@ -360,7 +367,6 @@ def obstacle_challenge():
             rotate_angle(0)
         
             if state.lap == laps:
-                time.sleep(5)
                 break
 
             # Latch the sides for this section. The lane's own signs are read on the
@@ -450,21 +456,21 @@ def obstacle_challenge():
 
 
     #parking
+    target_parking_center_x = (100 + (parking_gap / 2)) if state.clockwise == 1 else (200 - (parking_gap / 2))
     if not (state.clockwise == 1 and state.get_relative_odom[1] < 60):
         target_x = 95 if state.clockwise == 1 else 150
-        if not (state.get_relative_odom[0] > target - 3):
+        if not (state.get_relative_odom[0] > target_x - 3):
             move_coordinates(target_x, state.get_relative_odom[1], rotate = False)
     
     
     if state.get_relative_odom[1] > 60:
         if state.clockwise == 1:
             rotate_angle(-90 * state.clockwise)
-            move_coordinates(state.get_relative_odom[0], 25, rotate=False)
-            rotate_angle(-90 * state.clockwise)
+            move_coordinates(target_parking_center_x, 25, rotate=False)
             rotate_angle(0, reverse=True)
         else:
             rotate_angle(-90 * state.clockwise)
-            move_coordinates(state.get_relative_odom[0], 50, rotate=False)
+            move_coordinates(target_parking_center_x, 50, rotate=False)
             rotate_angle(-45 * state.clockwise)
             rotate_angle(0, reverse=True)
 
@@ -476,13 +482,21 @@ def obstacle_challenge():
 
     parking_offset = 5
     parking_rear_distance = 7
+    # Both are MINIMUMS, one per side - not a 9..14 band. The roomier side has
+    # to clear max_margin_cm (14 cm, the side the nose swings into) and the
+    # tighter one has to clear min_margin_cm (9 cm, the side it must not touch).
+    #
+    # These were 13/13, which no bay can satisfy: the bay is 30 cm and the car is
+    # 61 mm wide, so ~12 cm per side. The gate was therefore always false, the
+    # branch always took the `break`, and the car left the loop as crooked as it
+    # entered. 9/14 is what the comment above always said.
     max_margin_cm = 14
     min_margin_cm = 9
 
 
     # Move until detect second parking wall with side sonar
     target_parking_x = ((100 + parking_gap) if state.clockwise == 1 else (200)) - 9
-    move_coordinates(target_parking_x, 28, rotate=False, detect_parking_wall = True,
+    move_coordinates(target_parking_x, state.get_relative_odom[1], rotate=False, detect_parking_wall = True,
                          stop_when=lambda: 
                             abs(state.get_relative_odom[0] - target_parking_x) < 10 and
                             (abs(state.get_relative_odom[1] - Distance.get_left() ) > 20 if state.clockwise == 1 else abs(state.get_relative_odom[1] - Distance.get_right() ) > 20))
@@ -490,40 +504,72 @@ def obstacle_challenge():
 
     state.set_relative_odom(target_parking_x, state.get_relative_odom[1])
 
-    move_coordinates(state.get_relative_odom[0] + 12, 28, rotate=False, detect_parking_wall = True)
-
+    move_coordinates(state.get_relative_odom[0] + 12, state.get_relative_odom[1], rotate=False, detect_parking_wall = True)
 
     rotate_angle(90 * state.clockwise, reverse=True)
 
     time.sleep(1)
 
+    rear_missing = 0
+
     while True:
-        diff_distance = Distance.get_rear() - parking_rear_distance
+        rear = Distance.get_rear()
+
+        # -1 is "no echo", and reading it as a distance sent the car the wrong
+        # way: diff = -1 - 7 is negative, the `else` branch fired and the car
+        # drove FORWARD, out of the bay, on a single missed echo. Wait for a real
+        # reading instead, and give up after ~5 s rather than hang the round.
+        if rear < 0:
+            state.target_speed = 0
+            rear_missing += 1
+            if rear_missing > 50:
+                Telemetry.log("park: rear sonar silent, leaving the distance loop")
+                break
+            time.sleep(0.1)
+            continue
+        rear_missing = 0
+
+        diff_distance = rear - parking_rear_distance
 
         if abs(diff_distance) < 2:
             state.target_speed = 0
 
-            # Rotate only with BOTH margins confirmed inside the band. -1.0 is
-            # the sensor's "no reading" (a missed echo, or the side sonars
-            # shooting over the 20 cm magenta wall - see the 7.97 cm offset note
-            # below), and anything under min_margin_cm means the nose is already
-            # against the wall: rotating either way swings it into the wall.
-            # Outside the band the car leaves this loop instead - the final
-            # rotate-to-park below still squares it up.
+            # Both margins are MINIMUMS, not a band: the tighter side must clear
+            # min_margin_cm and the roomier side max_margin_cm (the side the nose
+            # swings into). -1.0 is the sensor's "no reading" (a missed echo, or
+            # the side sonars shooting over the 20 cm magenta wall - see the
+            # 7.97 cm offset note below), so it is treated as UNKNOWN rather than
+            # as a failed margin.
             left = Distance.get_left()
             right = Distance.get_right()
-            if (min_margin_cm <= left <= max_margin_cm and
-                    min_margin_cm <= right <= max_margin_cm):
+            margins_known = left >= 0 and right >= 0
+
+            if margins_known:
+                tighter = right if left > right else left
+                roomier = left if left > right else right
+                nudge_ok = tighter >= min_margin_cm and roomier >= max_margin_cm
+            else:
+                nudge_ok = False
+
+            if nudge_ok:
                 if left < right:
                     rotate_angle(90 * state.clockwise - 20)
                 else:
                     rotate_angle(90 * state.clockwise + 20)
-                rotate_angle(90 * state.clockwise)
-                time.sleep(0.1)
-            else:
-                Telemetry.log("park: margins L=%.1f R=%.1f outside %.0f..%.0f -> no rotate"
+            elif margins_known:
+                Telemetry.log("park: margins L=%.1f R=%.1f -> need %.0f/%.0f, squaring without the nudge"
                               % (left, right, min_margin_cm, max_margin_cm))
-                break
+            else:
+                Telemetry.log("park: side sonars silent (L=%.1f R=%.1f), squaring without the nudge"
+                              % (left, right))
+
+            # The square-up is what stops the car ending crooked, and it does not
+            # depend on the margins - it was inside the `if` above, so the failure
+            # branch broke out of the loop still crooked. Straighten either way:
+            # a bay finished at 1.8.3 is 7 points, an unfinished one is 0.
+            rotate_angle(90 * state.clockwise)
+            time.sleep(0.1)
+            break
         elif diff_distance > 0:
             state.target_speed = -10
         else:
@@ -551,7 +597,7 @@ def obstacle_challenge():
 
 
     while True:
-        diff_distance = Distance.get_rear() - 25
+        diff_distance = Distance.get_rear() - 20
 
         if abs(diff_distance) < 1:
             state.target_speed = 0
@@ -565,7 +611,15 @@ def obstacle_challenge():
 
     time.sleep(0.25)
 
+    angle_park = 45
+
     if (rotate_right_to_park == 1 and state.clockwise == 1) or (rotate_right_to_park == -1 and state.clockwise == -1):
-        rotate_angle(180, reverse=True)
+        _bay_swing(60, lock = -1, reverse=True)
+        _bay_swing(20, lock = 1, reverse=False)
+        #rotate_angle((180 - angle_park) * state.clockwise, reverse=True)
+        #rotate_angle(180)
     else:
-        rotate_angle(0, reverse=True)
+        _bay_swing(60, lock = 1, reverse=True)
+        _bay_swing(20, lock = -1, reverse=False)
+        #rotate_angle(angle_park * state.clockwise, reverse=True)
+        #rotate_angle(0)
