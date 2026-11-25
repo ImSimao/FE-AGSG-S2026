@@ -20,6 +20,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps the concurrent pass as the comparison, so cross-talk stays measurable on
   the bench.
 
+### Fixed
+
+- **Camera: a normal 10 cm sign was read as a modified 15 cm one, and its colour
+  was inverted.** The vertical fit solves distance and height together, so the
+  pair scales by one factor and stays self-consistent; a pitch/height
+  calibration error slides it along that family. A measured 10 cm green at
+  94 cm came back as `CAM:-1.7,143.5,15.4,GREEN` (both 1.53x), 15.4 cm sits in
+  the Surprise-Rule band, and the sign was written into the field as RED - a
+  distance error became a colour error and the car took the wrong line. The
+  camera now cross-checks the vertical fit against the range from the column's
+  fixed 5 cm width: yaw can inflate that width by at most sqrt(2), so a fit
+  beyond 1.45x of the width range is impossible in either direction, and it is
+  re-ranged on the width with the height re-solved there.
+- **`apply_surprise_rule()` inverts only on a confident 5.0 or 15.0 cm height**
+  (+-0.6) instead of the 3.5-7.5 / 12.5-18.0 bands, and never when the height is
+  unknown. The camera snaps the height to the three heights the rules allow, so
+  5.0 and 15.0 are the signal and 10.0 is the normal sign. A missed Surprise
+  costs the side of one sign; a false one costs the side of every normal sign
+  that reads tall.
+- **Mounting constants refitted**: `CAM_HEIGHT_CM` 10.18 -> 10.95 and
+  `CAM_PITCH_DEG` 8.3 -> 11.0, from the measured pose above. Provisional - one
+  pose pins two unknowns exactly, so a second and a third distance at the bench
+  have to confirm it (`--fit` below).
+
+### Added
+
+- `src/simulator/tools/camera_fit.py`: `--self-test` replays the field-log pose
+  through the camera script's own geometry, `--sweep` shows what the pipeline
+  reports when the mounting is off, and `--fit` does least squares on
+  `CAM_HEIGHT_CM` / `CAM_PITCH_DEG` from a table of measured poses.
+
 ## [1.0.0] - 2026-11-11
 
 The first release documented for the WRO Future Engineers 2026 season. The

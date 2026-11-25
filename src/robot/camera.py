@@ -35,9 +35,24 @@ def apply_surprise_rule(color, height_cm):
     side of the original colour, so a 5/15 cm sign's colour is inverted here.
     The judges never pick the first sign the car meets, so the firmware does not
     need to know which one it is.
+
+    The bands are tight on purpose. They used to be 3.5..7.5 and 12.5..18.0,
+    which made every 10 cm sign read 25 % tall into a modified one: a measured
+    10 cm green at 94 cm came back from the camera as 15.4 cm, and this function
+    wrote it into the field as RED - a distance error turned into a colour
+    error, and the car took the wrong line.
+
+    The camera now snaps the height to the three heights the rules allow, so
+    5.0 and 15.0 are the signal and 10.0 is the normal sign. Anything else means
+    the fit was not confident enough to invert a colour, and the colour seen is
+    kept: a missed Surprise costs the side of one sign, a false one costs the
+    side of every normal sign that reads tall.
+
     h == 0 means the height was unknown (a clipped sign), so no inversion.
     """
-    if 3.5 <= height_cm < 7.5 or 12.5 < height_cm <= 18.0:
+    if height_cm <= 0.0:
+        return color
+    if abs(height_cm - 5.0) <= 0.6 or abs(height_cm - 15.0) <= 0.6:
         return "GREEN" if color == "RED" else "RED"
     return color
 
