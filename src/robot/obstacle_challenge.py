@@ -521,7 +521,7 @@ def obstacle_challenge():
 
 
     while True:
-        diff_distance = Distance.get_rear() - 14.5
+        diff_distance = Distance.get_rear() - 20
 
         if abs(diff_distance) < 1:
             state.target_speed = 0
@@ -535,38 +535,10 @@ def obstacle_challenge():
 
     time.sleep(0.25)
 
-    # The shimmy drifts the car laterally. The side sonars cannot measure this
-    # while the car is off-parallel (diagonal readings, they shoot over the
-    # 20 cm wall), and the odometry's *absolute* x has a run-to-run offset of
-    # 0.3-3 cm from the entry manoeuvre. But the odometry's *relative* motion is
-    # faithful, so capture x here - the car is already at the correct parallel x
-    # (the reverse into the bay leaves the chassis at ~188-190, close to where
-    # it must finish) - and recentre back to it, cancelling the drift in the
-    # same frame it is measured. No absolute offset is added: the entry already
-    # sits at the finishing x.
-    x_ref = (State.outer_wall - state.get_relative_odom[0]) if state.clockwise == 1 else state.get_relative_odom[0]
-    Telemetry.log("bay: recenter x_ref=%.1f" % x_ref)
+    compass_angle = state.compass_angle_relative
+    if compass_angle > 180:
+        compass_angle -= 360
 
-    while True:
-        _bay_swing(3, -rotate_right_to_park, forward=True)
-        _bay_swing(3, rotate_right_to_park, forward=False)
-        
+    target = 0 if abs(compass_angle) < 90 else 180
 
-        compass_angle = state.compass_angle_relative
-        if compass_angle > 180:
-            compass_angle -= 360
-
-        diff = min(abs(compass_angle), abs(180 - compass_angle))
-
-        if diff < 45:
-            _recenter_x(x_ref, rotate_right_to_park)
-
-        if diff < 15:
-            target = 0 if abs(compass_angle) < 90 else 180
-
-            diff = target - compass_angle
-            #if abs(diff) >= 8:
-            #    _bay_swing(abs(diff/2), -1 if diff > 0 else 1, forward=False)
-
-            state.target_speed = 0
-            break
+    rotate_angle(target, reverse=True)
