@@ -5,10 +5,14 @@ All notable changes to the AGSG self-driving car are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-25
 
 ### Changed
 
+- **Telemetry silent on the car**: `telemetry.py` no longer forces
+  `ENABLED = True`. It is `_initial_enabled()` again, `False` on the board and
+  `True` in the simulator, so a competition round writes nothing to the HC-06
+  UART (rule 11.10); `WRO_TELEMETRY=1` brings the lines back for a bench session.
 - **Sonar slave measures sequentially** (`src/robot/SonarSlave/main.py`): the four
   SRF04 sensors are triggered one at a time, with a 3 ms guard gap after each echo
   and a wait for a stale pulse to fall before firing, instead of all four at once.

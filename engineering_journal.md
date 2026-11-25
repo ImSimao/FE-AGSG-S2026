@@ -3,7 +3,7 @@
 
 **Team:** AGSG (Portugal), Joana Silva, Simão Freire
 **Coach:** Tiago Severino
-**Version:** 1.0.0 · **Date:** 2026-11-11 · **Commit:** `d327305`
+**Version:** 1.1.0 · **Date:** 2026-11-25 · **Code release:** `eb98d06`
 
 ---
 
@@ -40,7 +40,7 @@
    - [5.3 Iteration history](#53-iteration-history)
    - [5.4 Risk & failure analysis](#54-risk--failure-analysis)
 6. [Reproducibility & GitHub](#6-reproducibility--github)
-7. [To be completed](#7-to-be-completed)
+7. [Known limitations and open items](#7-known-limitations-and-open-items)
 
 ---
 
@@ -376,6 +376,8 @@ The OpenMV runs a colour-blob detector, then converts each blob to the sign's **
 
 The state machine then reads the field model (`can_enter_lane`, `can_exit_lane`, `lanes_sides`) and **adjusts the trajectory** so the robot passes each pillar on the correct side (green left, red right).
 
+The camera also **cross-checks the distance it derives from the sign height against the sign width** (commit `03e8fd7`). The vertical fit solves distance and height together, so a mounting-pitch or height error slides the pair along the same family and stays self-consistent: a measured 10 cm green at 94 cm came back as `CAM:-1.7,143.5,15.4,GREEN`, both dimensions inflated by 1.53×. 15.4 cm sits in the Surprise-Rule band, so a distance error became a colour inversion and the car took the wrong line. The sign column's width is fixed at 5 cm and yaw can inflate it by √2 at most, so a vertical fit beyond **1.45×** of the width-derived range is impossible in either direction; the camera re-ranges on the width and re-solves the height there. `apply_surprise_rule()` then inverts only on a **confident 5.0 or 15.0 cm** (±0.6 cm) and never on an unknown height: a missed Surprise costs the side of one sign, a false one costs the side of every normal sign that reads tall.
+
 ### 4.8 Noise handling
 
 The encoder signal is the most sensitive part of the system. The motor produces electrical noise that used to create spurious encoder counts. We addressed this on three levels (detailed in §5):
@@ -494,7 +496,7 @@ We first used a micro 9g SG90 servo; its gears broke, both the plastic-gear and 
 
 ### 5.3 Iteration history
 
-The development is recorded in the git history (169 commits at the time of writing). Key iterations, aligned with the real commits:
+The development is recorded in the git history (193 commits at the time of writing). Key iterations, aligned with the real commits:
 
 | Change | Trigger / problem | Commit |
 |--------|-------------------|--------|
@@ -502,7 +504,9 @@ The development is recorded in the git history (169 commits at the time of writi
 | `uasyncio` control loop | cleaner code | `7a2725a` |
 | revert to `_thread` | `uasyncio` scheduling jitter degraded driving | `153aaeb` |
 | concurrent sonar firing + debug tool | throughput; cross-talk check | `13910c0` |
-| sequential sonar firing + guard gap | cross-talk risk on the odometry fixes | *uncommitted* |
+| sequential sonar firing + guard gap | cross-talk risk on the odometry fixes | `21af81d` |
+| camera width cross-check + tight Surprise bands | 10 cm sign read as 15.4 cm and inverted colour | `03e8fd7` |
+| parking: one reverse rotation | shimmy + recenter-x drifted 0.3–3 cm per run | `eb98d06` |
 | 20 kHz motor PWM | encoder over-counting from motor noise | `40c1fe2` |
 | dynamic encoder debounce | noise dominates at low speed | `9d59c39` |
 | cruise-control reversal guard | motor reversing during deceleration | `f966934` |
@@ -536,29 +540,27 @@ The commit history shows the development over time, and the README plus code com
 
 ---
 
-## 7. To be completed
+## 7. Known limitations and open items
 
-### Compliance (team)
+This section is the honest state of the project at submission time, not a wish list.
 
-1. **Bluetooth (debug only)**, the HC-06 is used only for debugging and is physically removed during competition rounds; the telemetry path is disabled for rounds (rule 11.10).
-2. **Start button**, add a start button (rules 9.10–9.11) and document the single power switch.
-3. **Weight**, done: measured **610 g** (limit 1.5 kg, rule 11.2); recorded in §2.1.
-4. **English**, done: the code (robot and simulator) is fully in English.
+### Compliance
 
-### Artefacts (team)
+1. **Start button (rules 9.10–9.11)**, the vehicle has the single power switch the rules require (a battery cutoff on the main rail), but it does not yet sit in a waiting state for a Start button: the firmware starts the run once it boots. This is the one open rule item, and it is a hardware addition, one push button on a spare GPIO plus a wait before the state machine is entered.
+2. **Bluetooth (rule 11.10)**, the HC-06 is bench telemetry only. `Telemetry.ENABLED` is `_initial_enabled()` again, `False` on the board (MicroPython) and `True` in the simulator, so a round writes nothing to the HC-06 UART, and the module is physically removed for competition rounds, so no RF path exists during a round.
+3. **Weight**, measured **610 g** against the 1.5 kg limit (rule 11.2), recorded in §2.1.
+4. **Language**, code, comments, README and journal are in English.
 
-5. Driving video (`video/`), done: obstacle and open challenge links.
-6. CAD files in `models/`, done: 27 parts, each in STEP and STL.
+### Deliverables
 
-### Measurements to publish (from test runs)
-
-7. Test metrics, partly done: score (62/62), round time and odometry error (median 2.8 cm) are recorded in §4.9; cross-track error and drift-per-lap still to publish.
-8. PID tuning data (overshoot vs steady-state, or step response), to measure.
-9. Camera colour-threshold false-positive rates (red vs green, different lighting), to measure.
-10. Sonar protocol frame-loss rate, to measure.
-11. IMU heading drift, done: ~1° per lap (§3.5); drift in °/min still to measure.
-12. Measured top speed under load, to measure (rated ~77 cm/s, §2.4).
+5. **Driving videos**, one per challenge, both linked in `video/`: obstacle <https://www.youtube.com/watch?v=8Ey_4ZfgiJs>, open <https://youtu.be/SHDiHfvkf2w>.
+6. **CAD**, 27 parts in `models/`, each as STEP and STL, the same parts as the Onshape document linked in §2.2.
+7. **Team and vehicle photos**, `t-photos/` (team photo and one per member) and `v-photos/` (six sides).
 
 ### Open Challenge
 
-13. The Open Challenge (`open_challenge.py`) is currently a set of hard-coded waypoints and is not called by `main.py`. It must be completed (handle the 600 mm vs 1000 mm corridors and the random start position), or its strategy documented honestly as work in progress.
+8. `open_challenge.py` is a working waypoint loop, but `main.py` calls `obstacle_challenge()` only, so a challenge is chosen by editing that one line before flashing. The Open controller derives its start corner and direction from the side sonars, and has not been validated against the 600 mm corridor draw.
+
+### Measurements still to publish
+
+9. Cross-track error and drift per lap, PID step response, camera false-positive rate per lighting condition, sonar frame-loss rate, IMU drift in °/min, and measured top speed under load. The debug tools that print the raw data already exist (`debug_pid.py`, the camera `RAW:` line, `SonarSlave/debug.py`); the numbers are not in this journal.

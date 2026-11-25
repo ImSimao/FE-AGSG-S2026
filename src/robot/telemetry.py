@@ -79,10 +79,11 @@ class Telemetry:
     stream to the simulator is not affected.
     """
 
-    # Master switch. Forced ON for telemetry debugging on the car; set it to
-    # False (or `_initial_enabled()`) for competition runs, where the shared
-    # UART writes can stall the control loop.
-    ENABLED = True
+    # Master switch: OFF on the car, ON in the simulator (see _initial_enabled).
+    # WRO_TELEMETRY=1 turns it back on for a bench session without editing this
+    # file. On the car the UART is shared with the sonar frame and the writes can
+    # stall the control loop, so a competition round runs with telemetry silent.
+    ENABLED = _initial_enabled()
 
     @staticmethod
     def _xor_checksum(payload: str) -> int:
