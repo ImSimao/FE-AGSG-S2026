@@ -302,7 +302,7 @@ def obstacle_challenge():
             Telemetry.log("lane 0: line memorised %s"
                           % Field.LANES[state.relative_lane].learned)
 
-        laps = 3
+        laps = 1
 
         while state.lap <= laps:
             state.current_lane += 1
@@ -450,8 +450,10 @@ def obstacle_challenge():
 
 
     #parking
-    if not (state.clockwise == 1 and state.get_relative_odom[1] < 60):      
-        move_coordinates(95 if state.clockwise == 1 else 150, state.get_relative_odom[1], rotate = False)
+    if not (state.clockwise == 1 and state.get_relative_odom[1] < 60):
+        target_x = 95 if state.clockwise == 1 else 150
+        if not (state.get_relative_odom[0] > target - 3):
+            move_coordinates(target_x, state.get_relative_odom[1], rotate = False)
     
     
     if state.get_relative_odom[1] > 60:
@@ -474,18 +476,22 @@ def obstacle_challenge():
 
     parking_offset = 5
     parking_rear_distance = 7
-    rotation_margin_cm = 16
+    max_margin_cm = 14
+    min_margin_cm = 9
 
 
     # Move until detect second parking wall with side sonar
-    target_parking_x = (100 + parking_gap) if state.clockwise == 1 else (200)
+    target_parking_x = ((100 + parking_gap) if state.clockwise == 1 else (200)) - 9
     move_coordinates(target_parking_x, 28, rotate=False, detect_parking_wall = True,
                          stop_when=lambda: 
-                            abs(state.get_relative_odom[0] - target_parking_x) < 5 and
+                            abs(state.get_relative_odom[0] - target_parking_x) < 10 and
                             (abs(state.get_relative_odom[1] - Distance.get_left() ) > 20 if state.clockwise == 1 else abs(state.get_relative_odom[1] - Distance.get_right() ) > 20))
 
 
-    state.set_relative_odom(target_parking_x - 8, state.get_relative_odom[1])
+    state.set_relative_odom(target_parking_x, state.get_relative_odom[1])
+
+    move_coordinates(state.get_relative_odom[0] + 12, 28, rotate=False, detect_parking_wall = True)
+
 
     rotate_angle(90 * state.clockwise, reverse=True)
 
@@ -497,14 +503,26 @@ def obstacle_challenge():
         if abs(diff_distance) < 2:
             state.target_speed = 0
 
-            if Distance.get_left() < rotation_margin_cm and Distance.get_right() < rotation_margin_cm:
-                if Distance.get_left() < Distance.get_right():
+            # Rotate only with BOTH margins confirmed inside the band. -1.0 is
+            # the sensor's "no reading" (a missed echo, or the side sonars
+            # shooting over the 20 cm magenta wall - see the 7.97 cm offset note
+            # below), and anything under min_margin_cm means the nose is already
+            # against the wall: rotating either way swings it into the wall.
+            # Outside the band the car leaves this loop instead - the final
+            # rotate-to-park below still squares it up.
+            left = Distance.get_left()
+            right = Distance.get_right()
+            if (min_margin_cm <= left <= max_margin_cm and
+                    min_margin_cm <= right <= max_margin_cm):
+                if left < right:
                     rotate_angle(90 * state.clockwise - 20)
                 else:
                     rotate_angle(90 * state.clockwise + 20)
                 rotate_angle(90 * state.clockwise)
                 time.sleep(0.1)
             else:
+                Telemetry.log("park: margins L=%.1f R=%.1f outside %.0f..%.0f -> no rotate"
+                              % (left, right, min_margin_cm, max_margin_cm))
                 break
         elif diff_distance > 0:
             state.target_speed = -10
@@ -527,7 +545,7 @@ def obstacle_challenge():
     # Bay centre is at 183 cm (physical): rightX 198 - gap/2 15. Right of
     # centre there is more room on the left, so rotate left (+1) and let the
     # nose swing into the open side.
-    rotate_right_to_park = 1 if physical_x > 183 else -1
+    rotate_right_to_park = 1 if physical_x < 200 - (parking_gap / 2) else -1
     Telemetry.log("bay: decide odom_x=%.1f phys=%.1f -> rotate_right_to_park=%+d" %
                   (rel_x, physical_x, rotate_right_to_park))
 
@@ -547,10 +565,7 @@ def obstacle_challenge():
 
     time.sleep(0.25)
 
-    compass_angle = state.compass_angle_relative
-    if compass_angle > 180:
-        compass_angle -= 360
-
-    target = 0 if abs(compass_angle) < 90 else 180
-
-    rotate_angle(target, reverse=True)
+    if (rotate_right_to_park == 1 and state.clockwise == 1) or (rotate_right_to_park == -1 and state.clockwise == -1):
+        rotate_angle(180, reverse=True)
+    else:
+        rotate_angle(0, reverse=True)

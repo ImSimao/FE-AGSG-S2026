@@ -44,8 +44,22 @@ W, H = 320, 240                  # QVGA
 # distance at the bench - src/simulator/tools/camera_fit.py --fit takes a table
 # of "distance top bottom width" and prints what to paste here, and --self-test
 # checks this file against the field-log pose.
-CAM_HEIGHT_CM = 10.95            # lens above the floor
-CAM_PITCH_DEG = 11.0             # optical axis below horizontal
+#
+# Refit 2026-11-25 from three bench poses of the same 10 cm sign, taped at 73,
+# 94 and 120 cm: rows 76..120, 75..111 and 76..103. The 10.95 / 11.0 above came
+# from one pose and put the whole image ~15 rows high, so a 10 cm sign read
+# 7.5 cm at 73 cm and 5.0 cm at 120 cm. The 5.0 is inside the Surprise band: a
+# normal red sign had its colour inverted and the car passed on the wrong side.
+#
+# The giveaway is the TOP row: 76 / 75 / 76 across 47 cm of range. The top of a
+# 10 cm sign is level with the lens (9.89 cm), so it projects on the HORIZON,
+# which does not move with distance: row 76 = CY0 - FOCAL_PX*tan(pitch), i.e.
+# pitch 7.7 deg, not 11. Two fits from different data agree:
+#   --fit    (top+bottom, assumes H=10)     -> 9.89 / 7.74, rms 0.46 px
+#   --floor  (bottom only, assumes nothing) -> 9.58 / 7.52
+# A future refit must reproduce all three poses, not one.
+CAM_HEIGHT_CM = 9.89             # lens above the floor
+CAM_PITCH_DEG = 7.74             # optical axis below horizontal
 FOCAL_PX = 315.0                 # QVGA focal, VERTICAL (bench-calibrated)
 # The lateral focal that reproduces the measured x at the same distance. It
 # differs from the vertical one by ~7%, which is lens/geometry asymmetry; using
@@ -85,6 +99,12 @@ D_WIDTH_MAX_RATIO = 1.45
 # 5.0 / 15.0 instead of a band wide enough to catch normal 10 cm signs.
 LEGAL_HEIGHTS_CM = (5.0, 10.0, 15.0)
 SNAP_TOLERANCE_CM = (1.5, 2.5, 2.5)
+# The Surprise Rule decision, defined once. camera.py's apply_surprise_rule()
+# uses the same +-0.6 around the same two heights; the LED block below used to
+# carry its own 7.5 / 12.5 bands and could disagree with it on one frame (a
+# 7.46 fit lit "modified" while the field kept the colour).
+MODIFIED_HEIGHTS_CM = (5.0, 15.0)
+MODIFIED_TOL_CM = 0.6
 
 # --- sensor init -----------------------------------------------------------
 sensor.reset()
@@ -211,17 +231,24 @@ def solve_height(v0_obs, v1_obs, D, cam_h=CAM_HEIGHT_CM, pitch_deg=CAM_PITCH_DEG
 
 
 def snap_height(hcm):
-    """Nearest legal sign height, or the raw value when it is near none of them.
+    """Nearest legal sign height, or 0.0 when the fit is no legal height at all.
 
-    The firmware keys the Surprise Rule off this: 5.0 and 15.0 mean "modified",
-    10.0 means "normal", anything else means "not known well enough to invert a
-    colour". Without the snap, a 10 cm sign read 25 % tall landed in the
-    modified band and had its colour inverted.
+    0.0 means UNKNOWN, exactly like a clipped blob, and it is what goes on the
+    wire: the controller keeps the colour it saw and never inverts on it. Until
+    this change the raw value went out instead, so 7.46 was sent as a 7.5 cm
+    sign. No legal sign is 7.5 cm: the controller's +-0.6 band kept the colour,
+    but the on-board LED decision (h < 7.5) lit "modified", and the two
+    disagreed on the same frame.
+
+    The gap is not a corner case. The vertical fit is 20-25 % uncertain (the
+    distance and the height scale together, see CAM_PITCH_DEG), so a normal
+    10 cm sign can land anywhere in 7.5..12.5 and only the snap decides which
+    side of the boundary it falls on.
     """
     for legal, tol in zip(LEGAL_HEIGHTS_CM, SNAP_TOLERANCE_CM):
         if abs(hcm - legal) <= tol:
             return legal
-    return hcm
+    return 0.0
 
 
 frame_no = 0
@@ -297,27 +324,42 @@ while True:
         # sqrt(2). A fit beyond that is impossible in either direction: yaw only
         # ever makes the vertical fit read *further* than the width, never
         # nearer. Re-range on the width and re-solve the height there.
+        # d_width is a distance to the column CENTRE, like every other D in this
+        # file (solve_dh models Z = D +- SIGN_HALF). Without the + SIGN_HALF it
+        # was the distance to the front face, so whenever the guard re-ranged,
+        # it under-ranged by 2.5 cm: 4.4 % at 56 cm, 1.7 % at 150 cm, and the
+        # height re-solved there came out short by the same fraction. It also
+        # uses the LATERAL focal, the one that measures widths: seeding with
+        # FOCAL_PX here left two different focals in the same horizontal range
+        # (339 vs 315, 7 %).
         w_px = bw if bw > 4 else 4
-        d_width = FOCAL_LAT_PX * (2.0 * SIGN_HALF) / w_px
-        D0 = FOCAL_PX * (2.0 * SIGN_HALF) / w_px + SIGN_HALF
+        d_width = FOCAL_LAT_PX * (2.0 * SIGN_HALF) / w_px + SIGN_HALF
+        D0 = d_width
         dh = solve_dh(by, by + bh, D0)
         if dh is None:
             continue
         D, hcm = dh
+        h_raw = hcm                         # the vertical fit, before ranging
         if d_width > 1.0 and (D > D_WIDTH_MAX_RATIO * d_width
                               or D * D_WIDTH_MAX_RATIO < d_width):
+            # The two independent ranges disagree by more than any yaw can
+            # explain (sqrt(2) is the most a 5x5 column can widen), so this is
+            # a merged blob, a mounting that drifted, or a sign past 45 deg -
+            # and in none of those is the HEIGHT trustworthy. Report it unknown
+            # so no colour is inverted off a frame that contradicts itself, and
+            # keep the width's distance, which is the better of the two guesses
+            # for placing the sign on the field.
             D = d_width
-            hcm = solve_height(by, by + bh, D)
-            if hcm is None:
-                continue
-        hcm = snap_height(hcm)
+            hcm = 0.0
+        else:
+            hcm = snap_height(hcm)          # 0.0 = no legal height -> unknown
         solved += 1
         u_center = bx + bw * 0.5
         x = LATERAL_SIGN * (u_center - CX0) * D / FOCAL_LAT_PX
         if v_clipped:
             hcm = 0.0                       # height unknown (top/bottom cut)
-        elif hcm < MIN_SIGN_HEIGHT_CM or hcm > MAX_SIGN_HEIGHT_CM:
-            continue
+        elif h_raw < MIN_SIGN_HEIGHT_CM or h_raw > MAX_SIGN_HEIGHT_CM:
+            continue                        # not a sign-sized blob at all
         if nearest_d is None or D < nearest_d:
             nearest_d = D
             nearest_color = color
@@ -347,7 +389,10 @@ while True:
             print("RAW:%d,%d,%d,%d,%d,%.2f" %
                   (by, by + bh, bw, bh, code, dens))
         parts.append("%.1f,%.1f,%.1f,%s" % (x, D, hcm, color))
-    is_modified = nearest_h != 0.0 and (nearest_h < 7.5 or nearest_h > 12.5)
+    # Same rule as apply_surprise_rule() in camera.py: invert on a confident
+    # 5.0 or 15.0, never on an unknown (0.0) or on a normal 10.0.
+    is_modified = (abs(nearest_h - MODIFIED_HEIGHTS_CM[0]) <= MODIFIED_TOL_CM
+                   or abs(nearest_h - MODIFIED_HEIGHTS_CM[1]) <= MODIFIED_TOL_CM)
     if nearest_color is None:
         led_red.off()
         led_green.off()

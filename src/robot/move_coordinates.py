@@ -20,6 +20,21 @@ BRAKE_DIST_SLOPE = 0.08
 
 STOP_SPEED = 1.0   # cm/s, below this the robot is considered stopped
 
+# The speed the lateral steering gains were tuned at (move_coordinates' own
+# max_speed). The PID below is fed a path-domain dt normalised to this, so the
+# same steering authority holds at any speed - see the steering block.
+MOVE_REF_SPEED = 50.0
+
+# Heading correction for the slow bay search. The lateral PID only sees the
+# cross-track offset, so a car that enters the move already crabbed drives
+# parallel to the line but off it; at the 15 cm/s of detect_parking_wall the
+# offset grows so slowly that the correction never arrives in time and the car
+# reaches the bay still crooked. These two set how much straightening is mixed
+# in: degrees of steering per degree of heading error, and its share of the
+# servo range so the lateral PID keeps authority.
+HEADING_GAIN = 0.8
+HEADING_MAX_DEG = 20.0
+
 
 def get_angle_to_rotate(dest_x, dest_y):
     x_initial, y_initial = state.get_relative_odom
@@ -200,6 +215,12 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
     uy_perp = ux
 
     pid_y = PIDController(kp=0.45, ki=0.003, kd=0.75)
+
+    # Heading the AB line itself asks for, in the odom frame. Used as the
+    # reference for the straightening term during the bay search: unlike a
+    # bearing to the destination it does not change as the car closes in, so it
+    # still means something at 20 cm from the target.
+    target_heading = math.degrees(math.atan2(ABy, ABx))
     move_start_ms = time.ticks_ms()
     last_loop_ms = move_start_ms
 
@@ -253,7 +274,51 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
         else:
             state.target_speed = max_speed
 
-        servo_angle = pid_y.compute(-y_prime, dt)
+        # --- steering, in PATH space --------------------------------------
+        # The lateral PID is kd*dY/dt, and dY/dt = v*dY/ds: the derivative term
+        # is therefore kd*v times the car's heading error. At the 15 cm/s the
+        # parking search runs at (detect_parking_wall) it is 3.3x weaker than at
+        # the 50 cm/s these gains were tuned at, so a heading error is only
+        # answered once the car has already drifted off the line - "at this
+        # speed it has to turn more". Feeding the PID a path-domain dt
+        # (dt * v / MOVE_REF_SPEED) makes all three terms a function of the
+        # distance travelled instead of the time spent, which is what the
+        # geometry needs; at v = MOVE_REF_SPEED the two dts are identical, so
+        # the fast moves keep the tuning they had.
+        v_now = abs(state.current_speed)
+        dt_path = dt * v_now / MOVE_REF_SPEED
+        if dt_path < 0.1 * dt:
+            dt_path = 0.1 * dt          # never divide the derivative by ~0
+        elif dt_path > 2.0 * dt:
+            dt_path = 2.0 * dt
+
+        servo_angle = pid_y.compute(-y_prime, dt_path)
+
+        # Straightening, bay search only. The PID above answers an offset that
+        # at 15 cm/s barely builds up; this answers the heading directly, so the
+        # wheels turn hard the moment the car is crooked instead of waiting for
+        # it to drift. Sign is the same frame as -y_prime: a positive error is
+        # corrected by a positive servo_angle before the clockwise mirror below.
+        if detect_parking_wall:
+            compass_now = state.compass_angle_relative
+            if compass_now > 180:
+                compass_now -= 360
+            if state.clockwise == -1:
+                compass_now = -compass_now
+
+            heading_error = target_heading - compass_now
+            if heading_error > 180:
+                heading_error -= 360
+            elif heading_error < -180:
+                heading_error += 360
+
+            straighten = HEADING_GAIN * heading_error
+            if straighten > HEADING_MAX_DEG:
+                straighten = HEADING_MAX_DEG
+            elif straighten < -HEADING_MAX_DEG:
+                straighten = -HEADING_MAX_DEG
+
+            servo_angle += straighten
 
         # Deadband: below ~1,5 cm of lateral offset the odometry noise (a few mm)
         # would otherwise drive the steering into a permanent micro-weave.

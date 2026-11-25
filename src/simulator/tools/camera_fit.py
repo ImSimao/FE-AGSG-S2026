@@ -13,9 +13,8 @@ This tool reads the constants and the geometry functions straight out of
 Camera/main.py (it does not re-implement them, so it cannot drift), and has
 three uses:
 
-  --self-test   run the known pose from the field log through the pipeline and
-                check the width guard recovers it (and print what the old
-                vertical-only path gave)
+  --self-test   run the three bench poses through the pipeline and check each
+                one reads 10 cm (and print what the superseded mounting gave)
   --sweep       for a grid of true (distance, height), project what the camera
                 would see with one set of constants and invert it with the
                 file's; report the error with and without the guard
@@ -30,6 +29,12 @@ separate height from pitch; a third checks the fit is not compensating.
     python src/simulator/tools/camera_fit.py --self-test
     python src/simulator/tools/camera_fit.py --sweep
     python src/simulator/tools/camera_fit.py --fit medidas.txt
+    python src/simulator/tools/camera_fit.py --floor medidas.txt
+
+--floor is the one to use when the sign height is itself in doubt: it fits the
+mounting from the blob's BOTTOM row only (where the column meets the floor),
+which depends on the mounting and the distance and never on the sign's height.
+One floor row with CAM_HEIGHT_CM fixed pins the pitch; two pin both.
 """
 
 from __future__ import annotations
@@ -41,11 +46,21 @@ import pathlib
 HERE = pathlib.Path(__file__).resolve().parent
 CAMERA_SCRIPT = HERE.parents[1] / "robot" / "Camera" / "main.py"
 
-# The pose from the field log (RAW:61,96,20,35,1,0.88 / CAM:-1.7,143.5,15.4):
-# a normal 10 cm sign, 94 cm in front of the camera, blob rows 61..96, 20 px wide.
-KNOWN = {"distance_cm": 94.0, "height_cm": 10.0, "top": 61.0, "bottom": 96.0, "width": 20.0}
-# The mounting constants the camera script shipped with when that log was taken.
-PRE_FIX = {"cam_h": 10.18, "pitch": 8.3}
+# Three bench poses of the SAME normal 10 cm sign, distances taped from the lens:
+# 73, 94 and 120 cm. (distance, top row, bottom row, blob width in px)
+POSES = [(73.0, 76.0, 120.0, 30.0),
+         (94.0, 75.0, 111.0, 25.0),
+         (120.0, 76.0, 103.0, 17.0)]
+# The 94 cm log also carried the same rows at 28-32 px wide with density 0.68-0.74:
+# there the blob had merged with something behind the sign (a clean sign at 94 cm
+# is 18 px and even 45 deg of yaw only reaches 25). Those frames must never reach
+# the Surprise Rule, and the guard is what stops them - so it is tested here.
+MERGED = (94.0, 75.0, 111.0, 32.0)
+# The mounting the file carried before the 2026-11-25 refit. It reproduces the old
+# 94 cm field log exactly and is 15 rows out on all three poses above: the top of
+# a 10 cm sign sits on the horizon (row 76), not at row 61, which is how a second
+# pose exposed it.
+SUPERSEDED = {"cam_h": 10.95, "pitch": 11.0}
 
 
 def load_geometry(path=CAMERA_SCRIPT):
@@ -85,26 +100,27 @@ def locate(ns, top, bottom, width, guard=True, cam_h=None, pitch_deg=None,
     focal_lat = ns["FOCAL_LAT_PX"] if focal_lat is None else focal_lat
     sign_half = ns["SIGN_HALF"]
     w_px = width if width > 4 else 4
-    d_width = focal_lat * (2.0 * sign_half) / w_px
-    d0 = ns["FOCAL_PX"] * (2.0 * sign_half) / w_px + sign_half
+    # Centre distance, like every D the solver returns (Z = D +- SIGN_HALF):
+    # without the + sign_half the guard re-ranges 2.5 cm short.
+    d_width = focal_lat * (2.0 * sign_half) / w_px + sign_half
+    d0 = d_width
     fit = ns["solve_dh"](float(top), float(bottom), d0, cam_h, pitch_deg)
     if fit is None:
         return None
     distance, height = fit
     reranged = False
     if guard:
-        solve_height = ns.get("solve_height")
         ratio = ns.get("D_WIDTH_MAX_RATIO")
-        if solve_height is not None and ratio is not None and d_width > 1.0:
-            if distance > ratio * d_width or distance * ratio < d_width:
-                distance = d_width
-                height = solve_height(float(top), float(bottom), distance,
-                                      cam_h, pitch_deg)
-                reranged = True
-                if height is None:
-                    return None
         snap = ns.get("snap_height")
-        if snap is not None:
+        # Mirror of the capture loop: a disagreement beyond the yaw limit
+        # re-ranges on the width and reports the height as UNKNOWN (0.0), so no
+        # colour is inverted off a frame whose two ranges contradict each other.
+        if (ratio is not None and d_width > 1.0
+                and (distance > ratio * d_width or distance * ratio < d_width)):
+            distance = d_width
+            height = 0.0
+            reranged = True
+        elif snap is not None:
             height = snap(height)
     return {"distance_cm": distance, "height_cm": height,
             "d_width": d_width, "reranged": reranged}
@@ -119,57 +135,57 @@ def _fmt(value, digits=1):
     return "-" if value is None else ("%." + str(digits) + "f") % value
 
 
+def _cell(result):
+    if result is None:
+        return "no fit"
+    return "D=%6.1f  H=%4.1f  %-9s" % (
+        result["distance_cm"], result["height_cm"],
+        "INVERTED" if inverted(result["height_cm"]) else "kept")
+
+
 def self_test(ns):
+    """Every bench pose must read 10 cm, and the guard must not invert one."""
     print("camera script: %s" % CAMERA_SCRIPT)
     print("constants now: CAM_HEIGHT_CM=%.2f  CAM_PITCH_DEG=%.2f  FOCAL_PX=%.0f  FOCAL_LAT_PX=%.0f"
           % (ns["CAM_HEIGHT_CM"], ns["CAM_PITCH_DEG"], ns["FOCAL_PX"], ns["FOCAL_LAT_PX"]))
     print()
-    print("known pose : %.0f cm away, %.0f cm tall, blob rows %.0f..%.0f, %.0f px wide"
-          % (KNOWN["distance_cm"], KNOWN["height_cm"], KNOWN["top"],
-             KNOWN["bottom"], KNOWN["width"]))
-    print("field log  : CAM:-1.7,143.5,15.4,GREEN   <- %s"
-          % ("matches" if True else ""))
-    print()
-    pre = locate(ns, KNOWN["top"], KNOWN["bottom"], KNOWN["width"], guard=False,
-                 cam_h=PRE_FIX["cam_h"], pitch_deg=PRE_FIX["pitch"])
-    pre_guarded = locate(ns, KNOWN["top"], KNOWN["bottom"], KNOWN["width"], guard=True,
-                         cam_h=PRE_FIX["cam_h"], pitch_deg=PRE_FIX["pitch"])
-    now = locate(ns, KNOWN["top"], KNOWN["bottom"], KNOWN["width"], guard=True)
-    print("%-46s %-22s %s" % ("", "distance / height", "Surprise Rule (green stays green?)"))
-    for label, result in (("as shipped (constant 10.18 / 8.3)", pre),
-                          ("as shipped + width guard", pre_guarded),
-                          ("with the constants in this file", now)):
-        if result is None:
-            print("%-46s no fit" % label)
-            continue
-        verdict = "INVERTED to red" if inverted(result["height_cm"]) else "kept green"
-        print("%-46s D=%6.1f cm  H=%5.1f cm   %-14s %s"
-              % (label, result["distance_cm"], result["height_cm"], verdict,
-                 "" if result["height_cm"] and inverted(result["height_cm"]) else ""))
-    print()
+    print("three bench poses of one 10 cm sign, taped distances:")
     ok = True
-    if pre is not None and abs(pre["distance_cm"] - 143.5) > 1.0:
-        print("note: the shipped constants no longer reproduce the field log (%.1f cm)"
-              % pre["distance_cm"])
-    if pre_guarded is None or not (60.0 <= pre_guarded["distance_cm"] <= 110.0):
-        print("FAIL: the width guard should bring the shipped constants back near 94 cm")
-        ok = False
-    if pre_guarded is not None and inverted(pre_guarded["height_cm"]):
-        print("FAIL: the width guard must not leave a normal sign in the 5/15 cm band")
-        ok = False
-    if now is not None:
-        if abs(now["height_cm"] - 10.0) > 0.01:
-            print("FAIL: with these constants the sign should read 10 cm, not %.1f"
+    for distance, top, bottom, width in POSES:
+        now = locate(ns, top, bottom, width, guard=True)
+        old = locate(ns, top, bottom, width, guard=True,
+                     cam_h=SUPERSEDED["cam_h"], pitch_deg=SUPERSEDED["pitch"])
+        print("  %5.0f cm  rows %5.0f..%5.0f  w=%2.0f   now: %s  |  10.95/11.0: %s"
+              % (distance, top, bottom, width, _cell(now), _cell(old)))
+        if now is None:
+            print("        FAIL: no fit with the constants in this file")
+            ok = False
+            continue
+        if abs(now["height_cm"] - 10.0) > 0.05:
+            print("        FAIL: a normal 10 cm sign must read 10.0, not %.1f"
                   % now["height_cm"])
             ok = False
-        if abs(now["distance_cm"] - KNOWN["distance_cm"]) > 6.0:
-            print("FAIL: with these constants the sign should read ~94 cm, not %.1f"
-                  % now["distance_cm"])
+        if abs(now["distance_cm"] - distance) > 4.0:
+            print("        FAIL: read %.1f cm for a sign measured at %.0f cm"
+                  % (now["distance_cm"], distance))
             ok = False
-    if ok:
-        print("OK: the shipped constants reproduce the log, the guard recovers it,"
-              " and this file's constants read it correctly")
-    return ok
+        if inverted(now["height_cm"]):
+            print("        FAIL: a normal sign must never land in the 5/15 cm band")
+            ok = False
+    merged = locate(ns, MERGED[1], MERGED[2], MERGED[3], guard=True)
+    print("  %5.0f cm  rows %5.0f..%5.0f  w=%2.0f   merged blob: %s"
+          % (MERGED[0], MERGED[1], MERGED[2], MERGED[3], _cell(merged)))
+    if merged is not None and inverted(merged["height_cm"]):
+        print("        FAIL: a merged blob must not be inverted into a Surprise")
+        ok = False
+    print()
+    if not ok:
+        print("FAIL: the mounting in the camera script does not reproduce the poses")
+        return False
+    print("OK: all three poses read 10 cm at their own distance. The 10.95 / 11.0")
+    print("column is the superseded mounting: it sat 15 rows high, which is why")
+    print("the 120 cm sign read 5.0 cm and had its colour inverted.")
+    return True
 
 
 def fit(ns, rows):
@@ -226,6 +242,87 @@ def fit(ns, rows):
     return 0
 
 
+def fit_floor(ns, rows):
+    """Fit CAM_PITCH_DEG (and CAM_HEIGHT_CM) from floor-contact rows.
+
+    rows are (distance_cm, top, bottom, width) - the same table --fit takes; only
+    the distance and the BOTTOM row are used. The bottom row is where the column
+    meets the floor: it depends on the mounting and the distance, never on the
+    sign's height, so a height that reads 25 % short cannot bias this fit (it
+    biases --fit). Yaw moves it by ~1 px even at 45 deg.
+
+    One row pins the pitch with cam_h held at the file's value; two rows pin
+    both, and a third checks that they are not compensating each other.
+    """
+    def cost(cam_h, pitch):
+        total = 0.0
+        for distance, top, bottom, _ in rows:
+            m = ns["_vspan"](distance, 10.0, cam_h, pitch)
+            if m is None:
+                return 1e9
+            total += (m[1] - bottom) ** 2
+        return total
+
+    best = None
+    if len(rows) == 1:
+        cam_h = ns["CAM_HEIGHT_CM"]
+        pitch = 0.0
+        while pitch <= 30.0:
+            c = cost(cam_h, pitch)
+            if best is None or c < best[0]:
+                best = (c, cam_h, pitch)
+            pitch += 0.01
+    else:
+        cam_h = 6.0
+        while cam_h <= 18.0:
+            pitch = 0.0
+            while pitch <= 30.0:
+                c = cost(cam_h, pitch)
+                if best is None or c < best[0]:
+                    best = (c, cam_h, pitch)
+                pitch += 0.05
+            cam_h += 0.05
+    cost0, h0, p0 = best
+    sh, sp = 0.02, 0.02
+    for _ in range(400):
+        moved = False
+        for dh, dp in ((sh, 0), (-sh, 0), (0, sp), (0, -sp)):
+            c = cost(h0 + dh, p0 + dp)
+            if c < cost0:
+                cost0, h0, p0 = c, h0 + dh, p0 + dp
+                moved = True
+        if not moved:
+            sh *= 0.5
+            sp *= 0.5
+            if sp < 1e-6:
+                break
+    rms = (cost0 / len(rows)) ** 0.5
+    print("floor-contact fit over %d row(s), rms %.1f px:" % (len(rows), rms))
+    for distance, top, bottom, _ in rows:
+        m = ns["_vspan"](distance, 10.0, h0, p0)
+        print("  %6.1f cm  bottom observed %6.1f   fitted %6.1f   error %+5.1f px"
+              % (distance, bottom, m[1], m[1] - bottom))
+    print()
+    if not (6.0 <= h0 <= 18.0) or rms > 3.0:
+        # The robot is 17 cm tall, so a lens 20 cm up does not exist. A fit that
+        # asks for one means the rows disagree with each other, and pasting it
+        # would be worse than leaving the old constants in place.
+        print("DO NOT PASTE: CAM_HEIGHT_CM %.1f with rms %.1f px is not a camera"
+              % (h0, rms))
+        print("that can be mounted on this robot. The rows disagree: one distance")
+        print("is wrong, or the camera moved between the measurements.")
+        return 1
+    print("paste into Camera/main.py:")
+    print("  CAM_HEIGHT_CM = %.2f" % h0)
+    print("  CAM_PITCH_DEG = %.2f" % p0)
+    if len(rows) < 2:
+        print("  (one row pins one unknown: CAM_HEIGHT_CM is held at %.2f)"
+              % ns["CAM_HEIGHT_CM"])
+    else:
+        print("  (two rows pin both - confirm with a third before trusting them)")
+    return 0
+
+
 def sweep(ns, true_h, true_pitch, true_focal_lat):
     """Project with one mounting, invert with the camera script's own."""
     print("mounting used to generate the blobs : height %.2f cm, pitch %.2f deg, lateral focal %.0f px"
@@ -276,7 +373,9 @@ def sweep(ns, true_h, true_pitch, true_focal_lat):
 
 def read_measurements(path):
     rows = []
-    for line in pathlib.Path(path).read_text(encoding="utf-8").splitlines():
+    # utf-8-sig: a table typed in Notepad on Windows starts with a BOM, and
+    # "float('\ufeff73')" would abort the run instead of reading the row.
+    for line in pathlib.Path(path).read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
@@ -296,6 +395,9 @@ def main(argv=None):
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--sweep", action="store_true")
     parser.add_argument("--fit", metavar="FILE")
+    parser.add_argument("--floor", metavar="FILE",
+                        help="fit the mounting from floor-contact rows only "
+                             "(distance top bottom [width])")
     parser.add_argument("--true-height", type=float, default=None,
                         help="mounting the sweep projects with (default: the script's own)")
     parser.add_argument("--true-pitch", type=float, default=None)
@@ -305,6 +407,8 @@ def main(argv=None):
     ns = load_geometry(pathlib.Path(args.camera_script))
     if args.fit:
         return fit(ns, read_measurements(args.fit))
+    if args.floor:
+        return fit_floor(ns, read_measurements(args.floor))
     if args.sweep:
         return sweep(ns,
                      ns["CAM_HEIGHT_CM"] if args.true_height is None else args.true_height,

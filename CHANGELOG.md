@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The bay search still did not straighten the car.** `move_coordinates()` only
+  steers on the cross-track offset (`y_prime`), so a car that enters the move
+  already crabbed drives parallel to the line but off it. The path-domain `dt`
+  keeps that correction speed-independent, but it cannot create a heading term
+  out of nothing, and at the 15 cm/s of `detect_parking_wall` the offset builds
+  so slowly that the car reaches the bay still crooked. The bay search now adds
+  a heading term against the direction of the line itself (`HEADING_GAIN = 0.8`
+  degrees of steering per degree of error, capped at `HEADING_MAX_DEG = 20` so
+  the lateral PID keeps authority). The other moves keep their tuning.
 - **The first corridor of the round was never memorised.** The corridor the car
   drives out of the bay in is lane 0, and it returns on laps two and three, but
   `remember_lane()` only ran inside the lap loop, so lane 0 reached
