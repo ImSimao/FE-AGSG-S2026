@@ -1,10 +1,10 @@
 # Fixed exposure in microseconds. Auto exposure is disabled: it left the image
 # brighter on some power-ups, and every brightness change moves the colour
 # thresholds. Tune this once for the field lighting (10 000-20 000 us at QVGA).
-EXPOSURE_US = 22000
+EXPOSURE_US = 25000
 
 DEBUG = False
-GREEN_THRESHOLDS = [(48, 86, -54, -19, -22, 37)]
+GREEN_THRESHOLDS = [(37, 86, -54, -19, -22, 37)]
 RED_THRESHOLDS = [(34, 71, 23, 74, -30, 49)]
 
 

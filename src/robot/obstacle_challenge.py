@@ -256,7 +256,7 @@ def obstacle_challenge():
 
             if not Field.can_exit_lane():
                 move_coordinates(150, 30, rotate=False)
-                rotate_coordinates(200, 60)
+                rotate_coordinates(250, 90)
 
                 searched_traffic_sign = True
 
@@ -286,7 +286,22 @@ def obstacle_challenge():
             move_coordinates(200, get_traffic_lane_y(Field.lanes_sides()[1]), rotate = False)
     
         Field.exiting_park = False
-    
+
+        # The corridor the car drives out of the bay in is lane 0, and it comes
+        # back on laps two and three. Nothing remembered it: the loop's
+        # remember_lane() only runs for the lanes it walks itself, so lane 0
+        # reached prepare_lane() with `learned` still None - clear_last_zone()
+        # then wiped the exit sign it had read on the way out, and the car
+        # re-drove the first corridor looking for a colour it had already seen.
+        # Remember the line here, while state.relative_lane is still 0 and the
+        # two sides are the ones chosen above. Guarded on both colours being
+        # real, so a corridor whose sign was never read keeps today's behaviour
+        # instead of latching the [-1, -1] default.
+        if entry_colour_known() and exit_colour_known():
+            Field.remember_lane(Field.lanes_sides())
+            Telemetry.log("lane 0: line memorised %s"
+                          % Field.LANES[state.relative_lane].learned)
+
         laps = 3
 
         while state.lap <= laps:
@@ -345,6 +360,7 @@ def obstacle_challenge():
             rotate_angle(0)
         
             if state.lap == laps:
+                time.sleep(5)
                 break
 
             # Latch the sides for this section. The lane's own signs are read on the
@@ -435,7 +451,7 @@ def obstacle_challenge():
 
     #parking
     if not (state.clockwise == 1 and state.get_relative_odom[1] < 60):      
-        move_coordinates(100 if state.clockwise == 1 else 150, state.get_relative_odom[1], rotate = False)
+        move_coordinates(95 if state.clockwise == 1 else 150, state.get_relative_odom[1], rotate = False)
     
     
     if state.get_relative_odom[1] > 60:
@@ -461,19 +477,15 @@ def obstacle_challenge():
     rotation_margin_cm = 16
 
 
-    # Move until detect first parking wall with side sonar
-    move_coordinates((100) if state.clockwise == 1 else (200 - parking_gap), state.get_relative_odom[1], rotate=False, 
+    # Move until detect second parking wall with side sonar
+    target_parking_x = (100 + parking_gap) if state.clockwise == 1 else (200)
+    move_coordinates(target_parking_x, 28, rotate=False, detect_parking_wall = True,
                          stop_when=lambda: 
-                            abs(state.get_relative_odom[1] - Distance.get_left() ) > 20 if state.clockwise == 1 else abs(state.get_relative_odom[1] - Distance.get_right() ) > 20)
+                            abs(state.get_relative_odom[0] - target_parking_x) < 5 and
+                            (abs(state.get_relative_odom[1] - Distance.get_left() ) > 20 if state.clockwise == 1 else abs(state.get_relative_odom[1] - Distance.get_right() ) > 20))
 
 
-    state.set_relative_odom(100 - 8 if state.clockwise == 1 else 200 - parking_gap - 8, state.get_relative_odom[1])
-
-    move_coordinates(100 + parking_offset if state.clockwise == 1 else 200 - (parking_gap - parking_offset), state.get_relative_odom[1], rotate=False)
- 
-    rotate_angle(90 * state.clockwise)
-
-    time.sleep(0.5)
+    state.set_relative_odom(target_parking_x - 8, state.get_relative_odom[1])
 
     rotate_angle(90 * state.clockwise, reverse=True)
 
@@ -521,7 +533,7 @@ def obstacle_challenge():
 
 
     while True:
-        diff_distance = Distance.get_rear() - 20
+        diff_distance = Distance.get_rear() - 25
 
         if abs(diff_distance) < 1:
             state.target_speed = 0

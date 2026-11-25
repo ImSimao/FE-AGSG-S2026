@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The first corridor of the round was never memorised.** The corridor the car
+  drives out of the bay in is lane 0, and it returns on laps two and three, but
+  `remember_lane()` only ran inside the lap loop, so lane 0 reached
+  `prepare_lane()` with `learned` still `None`: `clear_last_zone()` wiped the
+  exit sign read on the way out and the car re-drove the first corridor looking
+  for a colour it already had. The exit block now remembers lane 0's line before
+  the loop starts, guarded on both colours being real so a corridor whose sign
+  was never read keeps the old behaviour instead of latching `[-1, -1]`.
 - **Camera: a normal 10 cm sign was read as a modified 15 cm one, and its colour
   was inverted.** The vertical fit solves distance and height together, so the
   pair scales by one factor and stays self-consistent; a pitch/height

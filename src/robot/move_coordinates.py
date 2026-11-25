@@ -199,7 +199,7 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
     ux_perp = -uy
     uy_perp = ux
 
-    pid_y = PIDController(kp=0.35, ki=0.003, kd=0.75)
+    pid_y = PIDController(kp=0.45, ki=0.003, kd=0.75)
     move_start_ms = time.ticks_ms()
     last_loop_ms = move_start_ms
 
@@ -257,19 +257,12 @@ def move_coordinates(dest_x, dest_y, reverse = False, rotate = True, detect_park
 
         # Deadband: below ~1,5 cm of lateral offset the odometry noise (a few mm)
         # would otherwise drive the steering into a permanent micro-weave.
-        if abs(y_prime) < 0.15:
-            servo_angle = 0
+        #if abs(y_prime) < 0.15:
+        #    servo_angle = 0
 
         if reverse:
             state.target_speed = -state.target_speed
             servo_angle = -servo_angle
-
-        if detect_parking_wall:
-            if state.clockwise == 1 and (state.get_relative_odom[1] - Distance.get_left()) > 10  or state.clockwise == -1 and (state.get_relative_odom[1] - Distance.get_right()) > 10:
-                state.target_speed = 0
-                Servo.set_angle(0)
-                _trace_end("move", "parking wall")
-                break
 
         Servo.set_angle(servo_angle*state.clockwise)
 
